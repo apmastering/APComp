@@ -14,6 +14,56 @@ private:
     juce::Image knobImage;
 };
 
+class KnobLook2 : public juce::LookAndFeel_V4
+{
+public:
+    KnobLook2();
+    ~KnobLook2() override = default;
+    void drawRotarySlider (juce::Graphics& g, int x, int y, int width, int height, float sliderPosProportional, float rotaryStartAngle, float rotaryEndAngle, juce::Slider& slider) override;
+private:
+    juce::Image knobImage;
+};
+
+class KnobLook3 : public juce::LookAndFeel_V4
+{
+public:
+    KnobLook3();
+    ~KnobLook3() override = default;
+    void drawRotarySlider (juce::Graphics& g, int x, int y, int width, int height, float sliderPosProportional, float rotaryStartAngle, float rotaryEndAngle, juce::Slider& slider) override;
+private:
+    juce::Image knobImage;
+};
+
+class KnobLook4 : public juce::LookAndFeel_V4
+{
+public:
+    KnobLook4();
+    ~KnobLook4() override = default;
+    void drawRotarySlider (juce::Graphics& g, int x, int y, int width, int height, float sliderPosProportional, float rotaryStartAngle, float rotaryEndAngle, juce::Slider& slider) override;
+private:
+    juce::Image knobImage;
+};
+
+class KnobLook5 : public juce::LookAndFeel_V4
+{
+public:
+    KnobLook5();
+    ~KnobLook5() override = default;
+    void drawRotarySlider (juce::Graphics& g, int x, int y, int width, int height, float sliderPosProportional, float rotaryStartAngle, float rotaryEndAngle, juce::Slider& slider) override;
+private:
+    juce::Image knobImage;
+};
+
+class KnobLook6 : public juce::LookAndFeel_V4
+{
+public:
+    KnobLook6();
+    ~KnobLook6() override = default;
+    void drawRotarySlider (juce::Graphics& g, int x, int y, int width, int height, float sliderPosProportional, float rotaryStartAngle, float rotaryEndAngle, juce::Slider& slider) override;
+private:
+    juce::Image knobImage;
+};
+
 
 class APCompAudioProcessorEditor  : public juce::AudioProcessorEditor, private juce::Timer, public juce::Slider::Listener, public juce::Button::Listener, public juce::ComboBox::Listener
 {
@@ -32,13 +82,24 @@ private:
     APCompAudioProcessor& audioProcessor;
         
     KnobLook1 knobLook1;
+    KnobLook2 knobLook2;
+    KnobLook3 knobLook3;
+    KnobLook4 knobLook4;
+    KnobLook5 knobLook5;
+    KnobLook6 knobLook6;
     
     juce::Image backgroundImage;
+    juce::Image meterImage1;
+    juce::Image meterImage2;
+    juce::Image meterImage3;
+    juce::Image meterImage4;
+    juce::Image meterImage5;
+    juce::Image meterImage6;
     
     juce::Font customTypeface;
     
     std::string activeSliderName = "";
-    std::string defaultScreenText = "APComp V1";
+    std::string defaultScreenText = "AP Mastering\nCompressor V1";
     float activeSliderValue = 0.0f;
     
     juce::Slider inGainSlider;
@@ -110,10 +171,6 @@ private:
     int refreshRate = 33;
     int screenTimeoutCountdown = 0;
     int screenTimeoutCountdownTimeSeconds = 3;
-    
-    int gainReductionTextHoldCountdown = 0;
-    int gainReductionTextHoldConstant = 10;
-    float previousGainReduction = 0.0f;
         
     float slewedMeterSignalInput[2];
     float slewedMeterSignalOutput[2];

@@ -29,16 +29,16 @@ APCompAudioProcessorEditor::APCompAudioProcessorEditor (APCompAudioProcessor& p)
 
     inGainSlider.setLookAndFeel(&knobLook1);
     outGainSlider.setLookAndFeel(&knobLook1);
-    convexitySlider.setLookAndFeel(&knobLook4);
-    attackSlider.setLookAndFeel(&knobLook3);
-    releaseSlider.setLookAndFeel(&knobLook3);
-    thresholdSlider.setLookAndFeel(&knobLook2);
-    ratioSlider.setLookAndFeel(&knobLook2);
-    channelLinkSlider.setLookAndFeel(&knobLook5);
-    sidechainSlider.setLookAndFeel(&knobLook5);
-    feedbackSlider.setLookAndFeel(&knobLook5);
-    inertiaSlider.setLookAndFeel(&knobLook5);
-    inertiaDecaySlider.setLookAndFeel(&knobLook6);
+    convexitySlider.setLookAndFeel(&knobLook1);
+    attackSlider.setLookAndFeel(&knobLook1);
+    releaseSlider.setLookAndFeel(&knobLook1);
+    thresholdSlider.setLookAndFeel(&knobLook1);
+    ratioSlider.setLookAndFeel(&knobLook1);
+    channelLinkSlider.setLookAndFeel(&knobLook1);
+    sidechainSlider.setLookAndFeel(&knobLook1);
+    feedbackSlider.setLookAndFeel(&knobLook1);
+    inertiaSlider.setLookAndFeel(&knobLook1);
+    inertiaDecaySlider.setLookAndFeel(&knobLook1);
     
     metersOnButton.setColour(juce::ToggleButton::ColourIds::tickColourId, juce::Colours::black);
     metersOnButton.setColour(juce::ToggleButton::ColourIds::tickDisabledColourId, juce::Colours::black);
@@ -60,12 +60,12 @@ APCompAudioProcessorEditor::APCompAudioProcessorEditor (APCompAudioProcessor& p)
     
     oversamplingAttachment.reset (new juce::AudioProcessorValueTreeState::ComboBoxAttachment (audioProcessor.parameters, "oversampling", oversamplingBox));
     
-    backgroundImage = juce::ImageFileFormat::loadFrom(BinaryData::APMasteringBG_png, BinaryData::APMasteringBG_pngSize);
+    backgroundImage = juce::ImageFileFormat::loadFrom(BinaryData::bgflat_png, BinaryData::bgflat_pngSize);
 
     auto typeface = juce::Typeface::createSystemTypefaceFor(BinaryData::KnockoutFlyweight_otf, BinaryData::KnockoutFlyweight_otfSize);
     customTypeface = juce::FontOptions (typeface);
 
-    setSize (600, 600);
+    setSize (760, 400);
     startTimer(refreshRate);
     screenTimeoutCountdown = 0;
 }
@@ -202,137 +202,112 @@ void APCompAudioProcessorEditor::paint (juce::Graphics& g)
         // ---------------------------------------------------------
     }
     
-    // is putting spaces in between the letters necessary? Is there a font style tweak instead?
-    std::string transformedDisplayText = "";
-    for (int i = 0; i < displayText.length(); ++i)
-        {
-            transformedDisplayText += displayText[i];
-            if (i != displayText.length() - 1)
-                transformedDisplayText += ' ';
-        }
-    
-    g.setColour(juce::Colours::black.withAlpha(0.6f));
+    g.setColour(juce::Colours::black.withAlpha(0.3f));
     g.setFont(customTypeface);
     customTypeface.setHeight(32.0f);
 
-    g.drawFittedText(transformedDisplayText, 42, 324, 400, 60, juce::Justification::topLeft, 2);
+    g.drawFittedText(displayText, 340, 48, 200, 30, juce::Justification::centredTop, 2);
     
     std::string oversamplingString = "";
     oversamplingString = std::to_string(int(audioProcessor.selectedOS));
     oversamplingString += ":";
     oversamplingString += std::to_string(int(audioProcessor.oversampledSampleRate));
 
-    g.setColour(juce::Colours::white.withAlpha(0.3f));
-    g.drawFittedText(oversamplingString, 494, 12, 400, 400, juce::Justification::topLeft, 2);
+    g.setColour(juce::Colours::black.withAlpha(0.3f));
+    g.drawFittedText(oversamplingString, 580, 48, 100, 30, juce::Justification::centredTop, 2);
     
     int gainReductionMax = audioProcessor.metersGainReduction[0];
     int gainReductionR = audioProcessor.metersGainReduction[1];
     
-    // text rendering of GR is currently a bit lame. Delete entirely?
     if (gainReductionMax < gainReductionR) gainReductionMax = gainReductionR;
     
+    if (gainReductionMax > previousGainReduction) {
+        previousGainReduction = gainReductionMax;
+        gainReductionTextHoldCountdown = gainReductionTextHoldConstant;
+    }
+    
+    if (gainReductionTextHoldCountdown > 0) {
+        gainReductionTextHoldCountdown--;
+    } else {
+        previousGainReduction = gainReductionMax;
+    }
+    
     std::stringstream ss;
-    ss << std::setw(2) << std::setfill('0') << gainReductionMax;
+    ss << std::setw(2) << std::setfill('0') << previousGainReduction;
     std::string gainReductionString = ss.str() + " db";
 
     customTypeface.setHeight(38.0f);
-    g.setColour(juce::Colours::black.withAlpha(0.6f));
-    g.drawFittedText(gainReductionString, 240, 350, 200, 100, juce::Justification::topLeft, 1);
+    g.setColour(juce::Colours::black.withAlpha(0.3f));
+    g.drawFittedText(gainReductionString, 690, 48, 56, 30, juce::Justification::centredTop, 1);
     
+    const int meterHeight = 268;
+    const int meterLeftStart = 700;
+    const int meterTopStart = 104;
+    const int spacing = 6;
+    
+    g.setColour(juce::Colours::black);
+
     if (metersActive) {
-        int meterL1 = 0;
-        int meterR1 = 0;
-        int meterL2 = 0;
-        int meterR2 = 0;
-        int meterL3 = 0;
-        int meterR3 = 0;
-        bool meterL1Clip = false;
-        bool meterR1Clip = false;
-        bool meterL2Clip = false;
-        bool meterR2Clip = false;
-        bool meterL3Clip = false;
-        bool meterR3Clip = false;
         
-        meterL1 = std::abs(audioProcessor.meterSignalInput[0]) * -197.0f;
-        meterR1 = std::abs(audioProcessor.meterSignalInput[1]) * -197.0f;
-        meterL2 = audioProcessor.metersGainReduction[0] * 16.416f;
-        meterR2 = audioProcessor.metersGainReduction[1] * 16.416f;
-        meterL3 = std::abs(audioProcessor.meterSignalOutput[0]) * -197.0f;
-        meterR3 = std::abs(audioProcessor.meterSignalOutput[1]) * -197.0f;
+        const float meterGrainRedutionMaxDB = 12.0f;
+
+        float meterL1 = 0;
+        float meterR1 = 0;
+        float meterL2 = 0;
+        float meterR2 = 0;
+        float meterL3 = 0;
+        float meterR3 = 0;
         
-        if (meterL1 < -197) {
-            meterL1 = -197;
-            meterL1Clip = true;
-        }
-        if (meterR1 < -197) {
-            meterR1 = -197;
-            meterR1Clip = true;
+        meterL1 = audioProcessor.meterSignalInput[0];
+        meterR1 = audioProcessor.meterSignalInput[1];
+        meterL2 = audioProcessor.metersGainReduction[0];
+        meterR2 = audioProcessor.metersGainReduction[1];
+        meterL3 = audioProcessor.meterSignalOutput[0];
+        meterR3 = audioProcessor.meterSignalOutput[1];
+        
+        meterL1 = std::clamp(meterL1, 0.0f, 1.0f);
+        meterR1 = std::clamp(meterR1, 0.0f, 1.0f);
+        meterL3 = std::clamp(meterL3, 0.0f, 1.0f);
+        meterR3 = std::clamp(meterR3, 0.0f, 1.0f);
+        meterL2 = std::clamp(meterL2, 0.0f, meterGrainRedutionMaxDB);
+        meterR2 = std::clamp(meterR2, 0.0f, meterGrainRedutionMaxDB);
+
+        meterL1 = meterHeight - (meterL1 * meterHeight);
+        meterR1 = meterHeight - (meterR1 * meterHeight);
+        meterL3 = meterHeight -  (meterL3 * meterHeight);
+        meterR3 = meterHeight - (meterR3 * meterHeight);
+        meterL2 = (meterL2 / meterGrainRedutionMaxDB) * meterHeight - meterHeight;
+        meterR2 = (meterR2 / meterGrainRedutionMaxDB) * meterHeight - meterHeight;
             
-        }
-        if (meterL2 > 197) {
-            meterL2 = 197;
-            meterL2Clip = true;
-        }
-        if (meterR2 > 197) {
-            meterR2 = 197;
-            meterR2Clip = true;
-        }
-        if (meterL2 < 0) {
-            meterL2 = 0;
-            meterL2Clip = true;
-        }
-        if (meterR2 < 0) {
-            meterR2 = 0;
-            meterR2Clip = true;
-        }
-        if (meterL3 < -197) {
-            meterL3 = -197;
-            meterL3Clip = true;
-            
-        }
-        if (meterR3 < -197) {
-            meterR3 = -197;
-            meterR3Clip = true;
-        }
-        
-        g.setColour(juce::Colours::black.withAlpha(0.25f));
-        
-        g.fillRect(495, 255, 7, meterL1);
-        g.fillRect(502, 255, 7, meterR1);
-        g.fillRect(509, 58, 7, meterL2);
-        g.fillRect(516, 58, 7, meterR2);
-        g.fillRect(523, 255, 7, meterL3);
-        g.fillRect(530, 255, 7, meterR3);
-        
-        g.setColour(juce::Colours::red);
-        
-        if (meterL1Clip) g.fillRect(495, 58, 7, 4);
-        if (meterR1Clip) g.fillRect(502, 58, 7, 4);
-        if (meterL2Clip) g.fillRect(509, 255, 7, 4);
-        if (meterR2Clip) g.fillRect(516, 255, 7, 4);
-        if (meterL3Clip) g.fillRect(523, 58, 7, 4);
-        if (meterR3Clip) g.fillRect(530, 58, 7, 4);
+        g.fillRect(meterLeftStart + (spacing * 0), meterTopStart, spacing, static_cast<int>(meterL1));
+        g.fillRect(meterLeftStart + (spacing * 1), meterTopStart, spacing, static_cast<int>(meterR1));
+        g.fillRect(meterLeftStart + (spacing * 2), meterTopStart + meterHeight, spacing, static_cast<int>(meterL2));
+        g.fillRect(meterLeftStart + (spacing * 3), meterTopStart + meterHeight, spacing, static_cast<int>(meterR2));
+        g.fillRect(meterLeftStart + (spacing * 4), meterTopStart, spacing, static_cast<int>(meterL3));
+        g.fillRect(meterLeftStart + (spacing * 5), meterTopStart, spacing, static_cast<int>(meterR3));
+    } else {
+        g.fillRect(meterLeftStart, meterTopStart, spacing * 6, meterHeight);
     }
         
-    if (audioProcessor.feedbackClip) g.fillEllipse(558, 342, 6, 6);
+    if (audioProcessor.feedbackClip) g.fillEllipse(424, 145, 6, 6);
 }
 
 void APCompAudioProcessorEditor::resized()
 {
-    attackSlider.setBounds          (60,  160, 100, 100);
-    releaseSlider.setBounds         (200, 160, 100, 100);
-    convexitySlider.setBounds       (350, 160, 100, 100);
-    inGainSlider.setBounds          (32,  474, 100, 100);
-    thresholdSlider.setBounds       (171, 474, 100, 100);
-    ratioSlider.setBounds           (319, 474, 100, 100);
-    outGainSlider.setBounds         (466, 474, 100, 100);
-    channelLinkSlider.setBounds     (448, 346, 60, 60);
-    sidechainSlider.setBounds       (378, 346, 60, 60);
-    feedbackSlider.setBounds        (517, 346, 60, 60);
-    inertiaSlider.setBounds         (310, 346, 60, 60);
-    inertiaDecaySlider.setBounds    (295, 400, 60, 60);
-    metersOnButton.setBounds        (540, 241, 24, 24);
-    oversamplingBox.setBounds       (484, 270, 82, 26);
+    attackSlider.setBounds          (347, 288, 100, 100);
+    releaseSlider.setBounds         (461, 288, 100, 100);
+    convexitySlider.setBounds       (13,  160, 100, 100);
+    inGainSlider.setBounds          (13,  288, 100, 100);
+    thresholdSlider.setBounds       (125, 288, 100, 100);
+    ratioSlider.setBounds           (237, 288, 100, 100);
+    outGainSlider.setBounds         (573, 288, 100, 100);
+    channelLinkSlider.setBounds     (461, 160, 100,  100);
+    sidechainSlider.setBounds       (573, 160, 100,  100);
+    feedbackSlider.setBounds        (347, 160, 100,  100);
+    inertiaSlider.setBounds         (125, 160, 100,  100);
+    inertiaDecaySlider.setBounds    (237, 160, 100,  100);
+    metersOnButton.setBounds        (704, 0,   100,  76);
+    oversamplingBox.setBounds       (580, 99,  100,  30);
 }
 
 
@@ -345,27 +320,7 @@ void APCompAudioProcessorEditor::timerCallback()
 
 KnobLook1::KnobLook1()
 {
-    knobImage = juce::ImageFileFormat::loadFrom(BinaryData::knob1_png, BinaryData::knob1_pngSize);
-}
-KnobLook2::KnobLook2()
-{
-    knobImage = juce::ImageFileFormat::loadFrom(BinaryData::knob2_png, BinaryData::knob2_pngSize);
-}
-KnobLook3::KnobLook3()
-{
-    knobImage = juce::ImageFileFormat::loadFrom(BinaryData::knob3_png, BinaryData::knob3_pngSize);
-}
-KnobLook4::KnobLook4()
-{
-    knobImage = juce::ImageFileFormat::loadFrom(BinaryData::knob4_png, BinaryData::knob4_pngSize);
-}
-KnobLook5::KnobLook5()
-{
-    knobImage = juce::ImageFileFormat::loadFrom(BinaryData::knob5_png, BinaryData::knob5_pngSize);
-}
-KnobLook6::KnobLook6()
-{
-    knobImage = juce::ImageFileFormat::loadFrom(BinaryData::screw_png, BinaryData::screw_pngSize);
+    knobImage = juce::ImageFileFormat::loadFrom(BinaryData::knobflat_png, BinaryData::knobflat_pngSize);
 }
 
 void KnobLook1::drawRotarySlider(juce::Graphics& g,
@@ -378,120 +333,6 @@ void KnobLook1::drawRotarySlider(juce::Graphics& g,
     const float radius = juce::jmin(width / 2, height / 2);
     const float centreX = x + width * 0.5f;
     const float centreY = y + height * 0.5f;
-    const float rx = centreX - radius;
-    const float ry = centreY - radius;
-    const float angle = rotaryStartAngle + sliderPosProportional * (rotaryEndAngle - rotaryStartAngle);
-        
-    if (knobImage.isValid())
-    {
-        g.saveState();
-        g.addTransform(juce::AffineTransform::rotation(angle, centreX, centreY));
-        g.drawImageTransformed(knobImage, juce::AffineTransform::translation(rx, ry), false);
-        g.restoreState();
-    }
-}
-
-void KnobLook2::drawRotarySlider(juce::Graphics& g,
-                                         int x, int y, int width, int height,
-                                         float sliderPosProportional,
-                                         float rotaryStartAngle,
-                                         float rotaryEndAngle,
-                                         juce::Slider& slider)
-{
-    const float radius = juce::jmin(width / 2, height / 2);
-    const float centreX = x + width * 0.5f;
-    const float centreY = y + height * 0.5f;
-    const float rx = centreX - radius;
-    const float ry = centreY - radius;
-    const float angle = rotaryStartAngle + sliderPosProportional * (rotaryEndAngle - rotaryStartAngle);
-        
-    if (knobImage.isValid())
-    {
-        g.saveState();
-        g.addTransform(juce::AffineTransform::rotation(angle, centreX, centreY));
-        g.drawImageTransformed(knobImage, juce::AffineTransform::translation(rx, ry), false);
-        g.restoreState();
-    }
-}
-
-void KnobLook3::drawRotarySlider(juce::Graphics& g,
-                                         int x, int y, int width, int height,
-                                         float sliderPosProportional,
-                                         float rotaryStartAngle,
-                                         float rotaryEndAngle,
-                                         juce::Slider& slider)
-{
-    const float radius = juce::jmin(width / 2, height / 2);
-    const float centreX = x + width * 0.5f;
-    const float centreY = y + height * 0.5f;
-    const float rx = centreX - radius;
-    const float ry = centreY - radius;
-    const float angle = rotaryStartAngle + sliderPosProportional * (rotaryEndAngle - rotaryStartAngle);
-        
-    if (knobImage.isValid())
-    {
-        g.saveState();
-        g.addTransform(juce::AffineTransform::rotation(angle, centreX, centreY));
-        g.drawImageTransformed(knobImage, juce::AffineTransform::translation(rx, ry), false);
-        g.restoreState();
-    }
-}
-
-void KnobLook4::drawRotarySlider(juce::Graphics& g,
-                                         int x, int y, int width, int height,
-                                         float sliderPosProportional,
-                                         float rotaryStartAngle,
-                                         float rotaryEndAngle,
-                                         juce::Slider& slider)
-{
-    const float radius = juce::jmin(width / 2, height / 2);
-    const float centreX = x + width * 0.5f;
-    const float centreY = y + height * 0.5f;
-    const float rx = centreX - radius;
-    const float ry = centreY - radius;
-    const float angle = rotaryStartAngle + sliderPosProportional * (rotaryEndAngle - rotaryStartAngle);
-        
-    if (knobImage.isValid())
-    {
-        g.saveState();
-        g.addTransform(juce::AffineTransform::rotation(angle, centreX, centreY));
-        g.drawImageTransformed(knobImage, juce::AffineTransform::translation(rx, ry), false);
-        g.restoreState();
-    }
-}
-
-void KnobLook5::drawRotarySlider(juce::Graphics& g,
-                                         int x, int y, int width, int height,
-                                         float sliderPosProportional,
-                                         float rotaryStartAngle,
-                                         float rotaryEndAngle,
-                                         juce::Slider& slider)
-{
-    const float radius = juce::jmin(width / 2, height / 2);
-    const float centreX = x + width * 0.5f;
-    const float centreY = y + height * 0.5f;
-    const float rx = centreX - radius;
-    const float ry = centreY - radius;
-    const float angle = rotaryStartAngle + sliderPosProportional * (rotaryEndAngle - rotaryStartAngle);
-        
-    if (knobImage.isValid())
-    {
-        g.saveState();
-        g.addTransform(juce::AffineTransform::rotation(angle, centreX, centreY));
-        g.drawImageTransformed(knobImage, juce::AffineTransform::translation(rx, ry), false);
-        g.restoreState();
-    }
-}
-void KnobLook6::drawRotarySlider(juce::Graphics& g,
-                                         int x, int y, int width, int height,
-                                         float sliderPosProportional,
-                                         float rotaryStartAngle,
-                                         float rotaryEndAngle,
-                                         juce::Slider& slider)
-{
-    const float radius = juce::jmin(15 / 2, 15 / 2);
-    const float centreX = x + 15 * 0.5f;
-    const float centreY = y + 15 * 0.5f;
     const float rx = centreX - radius;
     const float ry = centreY - radius;
     const float angle = rotaryStartAngle + sliderPosProportional * (rotaryEndAngle - rotaryStartAngle);
