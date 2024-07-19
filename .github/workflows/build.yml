@@ -17,7 +17,7 @@ jobs:
     - name: Install CMake
       uses: jwlawson/actions-setup-cmake@v1
       with:
-        cmake-version: '3.19.6'
+        cmake-version: '3.22.0'  # Updated to CMake 3.22.0
 
     - name: Install JUCE dependencies on Linux
       if: matrix.os == 'ubuntu-latest'
