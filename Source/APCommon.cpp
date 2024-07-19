@@ -1,5 +1,7 @@
 #include "APCommon.h"
 #include <algorithm>
+#include <cmath>
+#include <limits>
 
 double linearToExponential(double linearValue, double minValue, double maxValue)
 {
