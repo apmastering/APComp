@@ -35,14 +35,15 @@ jobs:
           libxinerama-dev \
           libxrandr-dev \
           libxrender-dev \
-          libwebkit2gtk-4.0-dev
+          libwebkit2gtk-4.0-dev \
+          libgtk-3-dev  # Added dependency for GTK+3
 
     - name: Install JUCE dependencies on macOS
       if: matrix.os == 'macos-latest'
       run: |
         brew update
         brew install cmake
-        xcode-select --install  # Ensures Xcode Command Line Tools are installed
+        brew install gtk+3  # Ensure GTK+3 is installed
 
     - name: Install JUCE dependencies on Windows
       if: matrix.os == 'windows-latest'
