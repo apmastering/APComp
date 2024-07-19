@@ -4,7 +4,6 @@ on: [push]
 
 jobs:
   build:
-
     runs-on: ${{ matrix.os }}
     
     strategy:
@@ -25,6 +24,7 @@ jobs:
       run: |
         sudo apt-get update
         sudo apt-get install -y \
+          build-essential \
           libasound2-dev \
           libcurl4-openssl-dev \
           libfreetype6-dev \
@@ -36,6 +36,20 @@ jobs:
           libxrandr-dev \
           libxrender-dev \
           libwebkit2gtk-4.0-dev
+
+    - name: Install JUCE dependencies on macOS
+      if: matrix.os == 'macos-latest'
+      run: |
+        brew update
+        brew install cmake
+        brew install gtk+3  # This installs GTK+3 which may be needed for GUI applications
+
+    - name: Install JUCE dependencies on Windows
+      if: matrix.os == 'windows-latest'
+      run: |
+        choco install cmake --installargs 'ADD_CMAKE_TO_PATH=System'
+        choco install visualstudio2019buildtools --package-parameters "--add Microsoft.VisualStudio.Workload.VCTools"
+        choco install visualstudio2019-workload-native-desktop
 
     - name: Build project on Windows
       if: matrix.os == 'windows-latest'
