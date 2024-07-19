@@ -1,23 +1,21 @@
-cmake_minimum_required(VERSION 3.15)
-
-# Project name and version
+cmake_minimum_required(VERSION 3.14)
 project(APComp VERSION 0.0.1)
 
-# Set the path to the JUCE library (relative path)
-set(JUCE_DIR ${CMAKE_SOURCE_DIR}/JuceLibraryCode)
+include(FetchContent)
 
-# Add JUCE as a subdirectory
-add_subdirectory(${JUCE_DIR})
+# Download JUCE during the configure step
+FetchContent_Declare(
+    juce
+    GIT_REPOSITORY https://github.com/juce-framework/JUCE.git
+    GIT_TAG        master
+)
+FetchContent_MakeAvailable(juce)
 
-# Create the plugin target
 juce_add_plugin(APComp
-    # Plugin characteristics
     PLUGIN_MANUFACTURER_CODE APMG
     PLUGIN_CODE APCV
     FORMATS AU VST3
     PRODUCT_NAME "APComp"
-
-    # Source files
     SOURCES
         Source/PluginEditor.cpp
         Source/PluginProcessor.cpp
