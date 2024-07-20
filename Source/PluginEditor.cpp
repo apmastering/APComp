@@ -216,10 +216,12 @@ void APCompAudioProcessorEditor::paint (juce::Graphics& g)
     g.setColour(juce::Colours::black.withAlpha(0.3f));
     g.drawFittedText(oversamplingString, 580, 48, 100, 30, juce::Justification::centredTop, 2);
     
-    int gainReductionMax = audioProcessor.metersGainReduction[0];
-    int gainReductionR = audioProcessor.metersGainReduction[1];
+    float meterGainReductionL = audioProcessor.meterValues[4];
+    float meterGainReductionR = audioProcessor.meterValues[5];
     
-    if (gainReductionMax < gainReductionR) gainReductionMax = gainReductionR;
+    int gainReductionMax = static_cast<int>(meterGainReductionL);
+    
+    if (meterGainReductionL < meterGainReductionR) gainReductionMax = static_cast<int>(meterGainReductionR);
     
     if (gainReductionMax > previousGainReduction) {
         previousGainReduction = gainReductionMax;
@@ -250,43 +252,34 @@ void APCompAudioProcessorEditor::paint (juce::Graphics& g)
     if (metersActive) {
         
         const float meterGrainRedutionMaxDB = 12.0f;
-
-        float meterL1 = 0;
-        float meterR1 = 0;
-        float meterL2 = 0;
-        float meterR2 = 0;
-        float meterL3 = 0;
-        float meterR3 = 0;
         
-        meterL1 = audioProcessor.meterSignalInput[0];
-        meterR1 = audioProcessor.meterSignalInput[1];
-        meterL2 = audioProcessor.metersGainReduction[0];
-        meterR2 = audioProcessor.metersGainReduction[1];
-        meterL3 = audioProcessor.meterSignalOutput[0];
-        meterR3 = audioProcessor.meterSignalOutput[1];
+        float meterInputL = audioProcessor.meterValues[0];
+        float meterInputR = audioProcessor.meterValues[1];
+        float meterOutputL = audioProcessor.meterValues[2];
+        float meterOutputR = audioProcessor.meterValues[3];
         
-        meterL1 = std::clamp(meterL1, 0.0f, 1.0f);
-        meterR1 = std::clamp(meterR1, 0.0f, 1.0f);
-        meterL3 = std::clamp(meterL3, 0.0f, 1.0f);
-        meterR3 = std::clamp(meterR3, 0.0f, 1.0f);
-        meterL2 = std::clamp(meterL2, 0.0f, meterGrainRedutionMaxDB);
-        meterR2 = std::clamp(meterR2, 0.0f, meterGrainRedutionMaxDB);
+        meterInputL = std::clamp(meterInputL, 0.0f, 1.0f);
+        meterInputR = std::clamp(meterInputR, 0.0f, 1.0f);
+        meterOutputL = std::clamp(meterOutputL, 0.0f, 1.0f);
+        meterOutputR = std::clamp(meterOutputR, 0.0f, 1.0f);
+        meterGainReductionL = std::clamp(meterGainReductionL, 0.0f, meterGrainRedutionMaxDB);
+        meterGainReductionR = std::clamp(meterGainReductionR, 0.0f, meterGrainRedutionMaxDB);
 
-        int meterL1Int = meterHeight - (meterL1 * meterHeight);
-        int meterR1Int = meterHeight - (meterR1 * meterHeight);
-        int meterL3Int = meterHeight -  (meterL3 * meterHeight);
-        int meterR3Int = meterHeight - (meterR3 * meterHeight);
-        int meterL2Int = (meterL2 / meterGrainRedutionMaxDB) * meterHeight;
-        int meterR2Int = (meterR2 / meterGrainRedutionMaxDB) * meterHeight;
+        int meterInputLInt = meterHeight - (meterInputL * meterHeight);
+        int meterInputRInt = meterHeight - (meterInputR * meterHeight);
+        int meterOutputLInt = meterHeight -  (meterOutputL * meterHeight);
+        int meterOutputRInt = meterHeight - (meterOutputR * meterHeight);
+        int meterGainReductionLInt = (meterGainReductionL / meterGrainRedutionMaxDB) * meterHeight;
+        int meterGainReductionRInt = (meterGainReductionR / meterGrainRedutionMaxDB) * meterHeight;
 
-        g.fillRect(meterLeftStart + (spacing * 0), meterTopStart, spacing, meterL1Int);
-        g.fillRect(meterLeftStart + (spacing * 1), meterTopStart, spacing, meterR1Int);
+        g.fillRect(meterLeftStart + (spacing * 0), meterTopStart, spacing, meterInputLInt);
+        g.fillRect(meterLeftStart + (spacing * 1), meterTopStart, spacing, meterInputRInt);
 
-        g.fillRect(meterLeftStart + (spacing * 2), meterTopStart + meterL2Int, spacing, std::clamp(meterHeight, 0, meterHeight - meterL2Int));
-        g.fillRect(meterLeftStart + (spacing * 3), meterTopStart + meterR2Int, spacing, std::clamp(meterHeight, 0, meterHeight - meterR2Int));
+        g.fillRect(meterLeftStart + (spacing * 2), meterTopStart + meterGainReductionLInt, spacing, std::clamp(meterHeight, 0, meterHeight - meterGainReductionLInt));
+        g.fillRect(meterLeftStart + (spacing * 3), meterTopStart + meterGainReductionRInt, spacing, std::clamp(meterHeight, 0, meterHeight - meterGainReductionRInt));
 
-        g.fillRect(meterLeftStart + (spacing * 4), meterTopStart, spacing, meterL3Int);
-        g.fillRect(meterLeftStart + (spacing * 5), meterTopStart, spacing, meterR3Int);
+        g.fillRect(meterLeftStart + (spacing * 4), meterTopStart, spacing, meterOutputLInt);
+        g.fillRect(meterLeftStart + (spacing * 5), meterTopStart, spacing, meterOutputRInt);
 
     } else {
         g.fillRect(meterLeftStart, meterTopStart, spacing * 6, meterHeight);

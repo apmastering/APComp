@@ -14,7 +14,7 @@ double linearToExponential(double linearValue, double minValue, double maxValue)
 
 double gainToDecibels(double gain) {
     if (gain <= 0.0)
-        return -std::numeric_limits<double>::infinity();
+        return -1000;
     
     if (gain > 1000) gain = 1000;
 
@@ -22,10 +22,10 @@ double gainToDecibels(double gain) {
 }
 
 double decibelsToGain(double decibels) {
-    if (decibels <= -std::numeric_limits<double>::infinity())
+    if (decibels <= -1000)
         return 0.0;
     
-    if (decibels > 100) decibels = 100;
+    if (decibels > 1000) decibels = 1000;
     
     return std::pow(10.0, decibels / 20.0);
 }

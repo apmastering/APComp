@@ -4,6 +4,7 @@
 #include <memory>
 #include <mutex>
 #include <thread>
+#include <atomic>
 
 class APCompAudioProcessor  : public juce::AudioProcessor
 {
@@ -32,23 +33,12 @@ public:
     void setStateInformation (const void* data, int sizeInBytes) override;
     
     void doCompressionDSP(juce::dsp::AudioBlock<float> block);
-    
     void setOversampling(int selectedIndex);
     
-    double outputSample[2];
-    double slewedSignal[2];
-    double previousGainReduction[2];
-    float meterSignalInput[2];
-    float meterSignalOutput[2];
-    float metersGainReduction[2];
-    bool feedbackClip = false;
-    
-    int selectedOS = -1;
-    
-    int totalNumInputChannels = 0;
-    int totalNumOutputChannels = 0;
-    
-    float inertiaVelocity[2];
+    std::atomic<float> meterValues[6] = {0};
+    std::atomic<bool> feedbackClip { false };
+    std::atomic<int> selectedOS { -1 };
+    std::atomic<double> oversampledSampleRate { 0.0 };
     
     const int attackMin = 0;
     const int attackMax = 200;
@@ -59,19 +49,21 @@ public:
     juce::AudioProcessorValueTreeState::ParameterLayout createParameterLayout();
     
     juce::ValueTree state;
-    
-    double oversampledSampleRate = 0;
-
+        
 private:
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (APCompAudioProcessor)
-
+    
     std::mutex oversamplingMutex;
     std::unique_ptr<juce::dsp::Oversampling<float>> oversampling;
-
-    double gainReduction[2];
-    float meterDecayCoefficient = 0.9999f;
     
+    double outputSample[2] = {0};
+    double slewedSignal[2] = {-200.0};
+    double previousGainReduction[2] = {-200.0};
+    double gainReduction[2] = {0};
+    float meterDecayCoefficient = 0.9999f;
+    int totalNumInputChannels = 0;
+    int totalNumOutputChannels = 0;
+    float inertiaVelocity[2] = {0};
     size_t currentSamplesPerBlock = 0;
     int currentSampleRate = 0;
-    
 };

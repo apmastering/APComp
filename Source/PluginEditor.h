@@ -100,9 +100,7 @@ private:
     std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> feedbackAttachment;
     std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> inertiaAttachment;
     std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> inertiaDecayAttachment;
-    
     std::unique_ptr<juce::AudioProcessorValueTreeState::ButtonAttachment> metersOnAttachment;
-    
     std::unique_ptr<juce::AudioProcessorValueTreeState::ComboBoxAttachment> oversamplingAttachment;
 
         
@@ -114,9 +112,6 @@ private:
     int gainReductionTextHoldCountdown = 0;
     int gainReductionTextHoldConstant = 10;
     float previousGainReduction = 0.0f;
-        
-    float slewedMeterSignalInput[2];
-    float slewedMeterSignalOutput[2];
-    
+            
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (APCompAudioProcessorEditor)
 };

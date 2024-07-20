@@ -19,22 +19,6 @@ parameters (*this, nullptr, "PARAMETERS", createParameterLayout())
 
 #endif
 {
-    slewedSignal[0] = -200.0;
-    slewedSignal[1] = -200.0;
-    meterSignalOutput[0] = 0.0f;
-    meterSignalOutput[1] = 0.0f;
-    meterSignalInput[0] = 0.0f;
-    meterSignalInput[1] = 0.0f;
-    gainReduction[0] = 0.0f;
-    gainReduction[1] = 0.0f;
-    outputSample[0] = 0.0f;
-    outputSample[1] = 0.0f;
-    previousGainReduction[0] = -200.0;
-    previousGainReduction[1] = -200.0;
-    inertiaVelocity[0] = 0.0f;
-    inertiaVelocity[1] = 0.0f;
-    metersGainReduction[0] = 0.0f;
-    metersGainReduction[1] = 0.0f;
 }
 
 APCompAudioProcessor::~APCompAudioProcessor()
@@ -91,20 +75,15 @@ void APCompAudioProcessor::changeProgramName (int index, const juce::String& new
 
 void APCompAudioProcessor::prepareToPlay (double sampleRate, int samplesPerBlock)
 {
-    slewedSignal[0] = -200.0;
-    slewedSignal[1] = -200.0;
-    meterSignalOutput[0] = 0.0f;
-    meterSignalOutput[1] = 0.0f;
-    meterSignalInput[0] = 0.0f;
-    meterSignalInput[1] = 0.0f;
-    gainReduction[0] = 0.0f;
-    gainReduction[1] = 0.0f;
-    outputSample[0] = 0.0f;
-    outputSample[1] = 0.0f;
-    previousGainReduction[0] = -200.0;
-    previousGainReduction[1] = -200.0;
-    inertiaVelocity[0] = 0.0f;
-    inertiaVelocity[1] = 0.0f;
+    for (int i = 0; i < 2; i++) {
+        slewedSignal[i] = -200.0;
+        gainReduction[i] = 0.0f;
+        outputSample[i] = 0.0f;
+        previousGainReduction[i] = -200.0;
+        inertiaVelocity[i] = 0.0f;
+    }
+    
+    std::fill(std::begin(meterValues), std::end(meterValues), 0.0f);
     
     currentSamplesPerBlock = samplesPerBlock;
     currentSampleRate = sampleRate;
@@ -267,8 +246,7 @@ void APCompAudioProcessor::doCompressionDSP(juce::dsp::AudioBlock<float> block) 
                 gainReduction[i] = 0;
             }
             
-            if (slewedSignal[i] > 1000) slewedSignal[i] = 1000;  //infinite feedback stopper... more elegant solution?
-            if (slewedSignal[i] < -200) slewedSignal[i] = -200;
+            slewedSignal[i] = std::clamp(slewedSignal[i], -200.0, 1000.0); //infinite feedback stopper... more elegant solution?
             
             double gainReductionDecimal = decibelsToGain(gainReduction[i]);
 
@@ -296,6 +274,8 @@ void APCompAudioProcessor::doCompressionDSP(juce::dsp::AudioBlock<float> block) 
             maxGainReduction = gainReduction[1];
         }
         
+        float maxValuesForMeters[6] = {0};
+        
         for (int i = 0; i < 2 && i < totalNumInputChannels; i++) {
             gainReduction[i] = (maxGainReduction * channelLinkValue) + (gainReduction[i] * (channelLinkValue - 1) * -1);
             
@@ -310,28 +290,24 @@ void APCompAudioProcessor::doCompressionDSP(juce::dsp::AudioBlock<float> block) 
             if (std::isnan(outputSample[i])) {
                 outputSample[i] = 0.0f;
             }
-                
+
             channelData[i][sample] = outputSample[i];
             
-            if (std::abs(inputSample[i]) > meterSignalInput[i]) {
-                meterSignalInput[i] = std::abs(inputSample[i]);
-            } else {
-                meterSignalInput[i] *= meterDecayCoefficient;
-            }
+            if (std::abs(inputSample[i]) > maxValuesForMeters[i]) maxValuesForMeters[i] = std::abs(inputSample[i]);
+            if (std::abs(outputSample[i]) > maxValuesForMeters[i+2]) maxValuesForMeters[i+2] = std::abs(outputSample[i]);
+            if (gainReduction[i] > maxValuesForMeters[i+4]) maxValuesForMeters[i+4] = gainReduction[i];
+        }
+                
+        for (int i = 0; i < 6; i++) {
+            if (maxValuesForMeters[i] > 100) maxValuesForMeters[i] = 100;
             
-            if (std::abs(outputSample[i]) > meterSignalOutput[i]) {
-                meterSignalOutput[i] = std::abs(outputSample[i]);
+            if (maxValuesForMeters[i] > meterValues[i]) {
+                meterValues[i] = maxValuesForMeters[i];
             } else {
-                meterSignalOutput[i] *= meterDecayCoefficient;
-            }
-            
-            if (gainReduction[i] > metersGainReduction[i]) {
-                metersGainReduction[i] = gainReduction[i];
-            } else {
-                if (releaseCoefficient > meterDecayCoefficient) {
-                    metersGainReduction[i] *= releaseCoefficient;
+                if (releaseCoefficient > meterDecayCoefficient && i > 3) {
+                    meterValues[i] = meterValues[i] * releaseCoefficient;
                 } else {
-                    metersGainReduction[i] *= meterDecayCoefficient;
+                    meterValues[i] = meterValues[i] * meterDecayCoefficient;
                 }
             }
         }
@@ -377,8 +353,8 @@ juce::AudioProcessorValueTreeState::ParameterLayout APCompAudioProcessor::create
     params.push_back (std::make_unique<juce::AudioParameterFloat> ("inGain", "Input Gain", -12.0f, 24.0f, 0.0f));
     params.push_back (std::make_unique<juce::AudioParameterFloat> ("outGain", "Output Gain", -12.0f, 24.0f, 0.0f));
     params.push_back (std::make_unique<juce::AudioParameterFloat> ("convexity", "Convexity", -2.0f, 2.0f, 1.0f));
-    params.push_back (std::make_unique<juce::AudioParameterInt> ("attack", "Attack", attackMin, attackMax, 30));
-    params.push_back (std::make_unique<juce::AudioParameterInt> ("release", "Release", releaseMin, releaseMax, 100));
+    params.push_back (std::make_unique<juce::AudioParameterInt> ("attack", "Attack", attackMin, attackMax, 90));
+    params.push_back (std::make_unique<juce::AudioParameterInt> ("release", "Release", releaseMin, releaseMax, 400));
     params.push_back (std::make_unique<juce::AudioParameterFloat> ("threshold", "Threshold", -70.0f, 0.0f, 0.0f));
     params.push_back (std::make_unique<juce::AudioParameterFloat> ("ratio", "Ratio", 1.0f, 6.0f, 6.0f));
     params.push_back (std::make_unique<juce::AudioParameterFloat> ("channelLink", "Channel Link", 0.0f, 100.0f, 100.0f));
