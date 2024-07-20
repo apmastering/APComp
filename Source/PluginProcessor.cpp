@@ -35,13 +35,10 @@ parameters (*this, nullptr, "PARAMETERS", createParameterLayout())
     inertiaVelocity[1] = 0.0f;
     metersGainReduction[0] = 0.0f;
     metersGainReduction[1] = 0.0f;
-    
-    oversampling = new juce::dsp::Oversampling<float>(4, 0, juce::dsp::Oversampling<float>::filterHalfBandFIREquiripple);
 }
 
 APCompAudioProcessor::~APCompAudioProcessor()
 {
-    delete oversampling;
 }
 
 const juce::String APCompAudioProcessor::getName() const
@@ -129,25 +126,24 @@ void APCompAudioProcessor::setOversampling(int selectedIndex)
     if (currentSamplesPerBlock < 4 || currentSampleRate < 100) {
         return;
     }
-
-    oversampling->reset();
-
+    
+    std::lock_guard<std::mutex> lock(oversamplingMutex);
+    
     switch (selectedIndex) {
         case 0:
-            oversampling = new juce::dsp::Oversampling<float>(4, 0, juce::dsp::Oversampling<float>::filterHalfBandPolyphaseIIR);
+            oversampling = std::make_unique<juce::dsp::Oversampling<float>>(4, 0, juce::dsp::Oversampling<float>::filterHalfBandPolyphaseIIR);
             break;
         case 1:
-            oversampling = new juce::dsp::Oversampling<float>(4, 1, juce::dsp::Oversampling<float>::filterHalfBandFIREquiripple);
+            oversampling = std::make_unique<juce::dsp::Oversampling<float>>(4, 1, juce::dsp::Oversampling<float>::filterHalfBandFIREquiripple);
             break;
         case 2:
-            oversampling = new juce::dsp::Oversampling<float>(4, 1, juce::dsp::Oversampling<float>::filterHalfBandPolyphaseIIR);
+            oversampling = std::make_unique<juce::dsp::Oversampling<float>>(4, 1, juce::dsp::Oversampling<float>::filterHalfBandPolyphaseIIR);
             break;
         case 3:
-            oversampling = new juce::dsp::Oversampling<float>(4, 2, juce::dsp::Oversampling<float>::filterHalfBandFIREquiripple);
+            oversampling = std::make_unique<juce::dsp::Oversampling<float>>(4, 2, juce::dsp::Oversampling<float>::filterHalfBandFIREquiripple);
             break;
         case 4:
-            oversampling = new juce::dsp::Oversampling<float>(4, 2, juce::dsp::Oversampling<float>::filterHalfBandPolyphaseIIR);
-            
+            oversampling = std::make_unique<juce::dsp::Oversampling<float>>(4, 2, juce::dsp::Oversampling<float>::filterHalfBandPolyphaseIIR);
             break;
     }
     
@@ -186,6 +182,8 @@ void APCompAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce:
     
     juce::dsp::AudioBlock<float> originalBlock (buffer);
     juce::dsp::AudioBlock<float> block (buffer);
+    
+    std::lock_guard<std::mutex> lock(oversamplingMutex);
     
     juce::dsp::AudioBlock<float> oversampledBlock = oversampling->processSamplesUp (block);
     

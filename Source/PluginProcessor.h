@@ -1,6 +1,9 @@
 #pragma once
 #include <JuceHeader.h>
 #include <vector>
+#include <memory>
+#include <mutex>
+#include <thread>
 
 class APCompAudioProcessor  : public juce::AudioProcessor
 {
@@ -62,7 +65,8 @@ public:
 private:
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (APCompAudioProcessor)
 
-    juce::dsp::Oversampling<float>* oversampling;
+    std::mutex oversamplingMutex;
+    std::unique_ptr<juce::dsp::Oversampling<float>> oversampling;
 
     double gainReduction[2];
     float meterDecayCoefficient = 0.9999f;

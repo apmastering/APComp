@@ -71,7 +71,7 @@ APCompAudioProcessorEditor::APCompAudioProcessorEditor (APCompAudioProcessor& p)
 }
 
 APCompAudioProcessorEditor::~APCompAudioProcessorEditor()
-{    
+{
     for (auto& sliderRef : sliders) {
         juce::Slider& slider = sliderRef.get();
         slider.removeListener(this);
@@ -272,19 +272,22 @@ void APCompAudioProcessorEditor::paint (juce::Graphics& g)
         meterL2 = std::clamp(meterL2, 0.0f, meterGrainRedutionMaxDB);
         meterR2 = std::clamp(meterR2, 0.0f, meterGrainRedutionMaxDB);
 
-        meterL1 = meterHeight - (meterL1 * meterHeight);
-        meterR1 = meterHeight - (meterR1 * meterHeight);
-        meterL3 = meterHeight -  (meterL3 * meterHeight);
-        meterR3 = meterHeight - (meterR3 * meterHeight);
-        meterL2 = (meterL2 / meterGrainRedutionMaxDB) * meterHeight - meterHeight;
-        meterR2 = (meterR2 / meterGrainRedutionMaxDB) * meterHeight - meterHeight;
-            
-        g.fillRect(meterLeftStart + (spacing * 0), meterTopStart, spacing, static_cast<int>(meterL1));
-        g.fillRect(meterLeftStart + (spacing * 1), meterTopStart, spacing, static_cast<int>(meterR1));
-        g.fillRect(meterLeftStart + (spacing * 2), meterTopStart + meterHeight, spacing, static_cast<int>(meterL2));
-        g.fillRect(meterLeftStart + (spacing * 3), meterTopStart + meterHeight, spacing, static_cast<int>(meterR2));
-        g.fillRect(meterLeftStart + (spacing * 4), meterTopStart, spacing, static_cast<int>(meterL3));
-        g.fillRect(meterLeftStart + (spacing * 5), meterTopStart, spacing, static_cast<int>(meterR3));
+        int meterL1Int = meterHeight - (meterL1 * meterHeight);
+        int meterR1Int = meterHeight - (meterR1 * meterHeight);
+        int meterL3Int = meterHeight -  (meterL3 * meterHeight);
+        int meterR3Int = meterHeight - (meterR3 * meterHeight);
+        int meterL2Int = (meterL2 / meterGrainRedutionMaxDB) * meterHeight;
+        int meterR2Int = (meterR2 / meterGrainRedutionMaxDB) * meterHeight;
+
+        g.fillRect(meterLeftStart + (spacing * 0), meterTopStart, spacing, meterL1Int);
+        g.fillRect(meterLeftStart + (spacing * 1), meterTopStart, spacing, meterR1Int);
+
+        g.fillRect(meterLeftStart + (spacing * 2), meterTopStart + meterL2Int, spacing, std::clamp(meterHeight, 0, meterHeight - meterL2Int));
+        g.fillRect(meterLeftStart + (spacing * 3), meterTopStart + meterR2Int, spacing, std::clamp(meterHeight, 0, meterHeight - meterR2Int));
+
+        g.fillRect(meterLeftStart + (spacing * 4), meterTopStart, spacing, meterL3Int);
+        g.fillRect(meterLeftStart + (spacing * 5), meterTopStart, spacing, meterR3Int);
+
     } else {
         g.fillRect(meterLeftStart, meterTopStart, spacing * 6, meterHeight);
     }
