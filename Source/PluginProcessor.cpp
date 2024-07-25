@@ -203,6 +203,7 @@ void APCompAudioProcessor::doCompressionDSP(juce::dsp::AudioBlock<float> block) 
     
     inertiaDecayCoefficient = 0.99 + (inertiaDecayCoefficient * 0.01);
 
+    float maxValuesForMeters[6] = {0};
     
     for (int sample = 0; sample < block.getNumSamples(); ++sample)
     {
@@ -273,9 +274,7 @@ void APCompAudioProcessor::doCompressionDSP(juce::dsp::AudioBlock<float> block) 
         if (gainReduction[0] < gainReduction[1]) {
             maxGainReduction = gainReduction[1];
         }
-        
-        float maxValuesForMeters[6] = {0};
-        
+                
         for (int i = 0; i < 2 && i < totalNumInputChannels; i++) {
             gainReduction[i] = (maxGainReduction * channelLinkValue) + (gainReduction[i] * (channelLinkValue - 1) * -1);
             
