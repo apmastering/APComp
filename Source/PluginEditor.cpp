@@ -120,11 +120,6 @@ void APCompAudioProcessorEditor::buttonClicked(juce::Button* button)
             metersActive = false;
         }
     }
-    
-    // redundant? variable refresh rate was abolished
-    if (getTimerInterval() != refreshRate) {
-        startTimer(refreshRate);
-    }
 }
 
 void APCompAudioProcessorEditor::comboBoxChanged(juce::ComboBox* comboBox)

@@ -282,7 +282,7 @@ void APCompAudioProcessor::doCompressionDSP(juce::dsp::AudioBlock<float> block) 
             if (sidechainSelected) {
                 inputSampledb[i] = gainToDecibels(std::abs(inputSample[i]));
             }
-            
+                            
             outputSample[i] = decibelsToGain(inputSampledb[i] - gainReduction[i]) * (inputSample[i] < 0 ? -1.0f : 1.0f);
             outputSample[i] = outputSample[i] * decibelsToGain(outGainValue);
             
@@ -290,8 +290,8 @@ void APCompAudioProcessor::doCompressionDSP(juce::dsp::AudioBlock<float> block) 
             if (std::isnan(outputSample[i])) {
                 outputSample[i] = 0.0f;
             }
-
-            channelData[i][sample] = outputSample[i];
+            
+            if (i < totalNumOutputChannels) channelData[i][sample] = outputSample[i];
             
             if (std::abs(inputSample[i]) > maxValuesForMeters[i]) maxValuesForMeters[i] = std::abs(inputSample[i]);
             if (std::abs(outputSample[i]) > maxValuesForMeters[i+2]) maxValuesForMeters[i+2] = std::abs(outputSample[i]);
