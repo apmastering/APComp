@@ -2,8 +2,8 @@
 
 <JUCERPROJECT id="RS5PrV" name="APComp" projectType="audioplug" useAppConfig="0"
               addUsingNamespaceToJuceHeader="0" displaySplashScreen="1" jucerFormatVersion="1"
-              companyName="AP Mastering" pluginFormats="buildAAX,buildAU,buildVST3"
-              pluginVST3Category="Dynamics" pluginAAXCategory="2">
+              companyName="AP Mastering" pluginFormats="buildAU,buildVST3"
+              pluginVST3Category="Dynamics" pluginAAXCategory="0">
   <MAINGROUP id="Hvoxjg" name="APComp">
     <GROUP id="{75A4BD03-6758-0836-43A9-891F6FB902AD}" name="Source">
       <FILE id="wgnZxb" name="Knockout-Flyweight.otf" compile="0" resource="1"

@@ -160,11 +160,10 @@ void APCompAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce:
         buffer.clear(i, 0, buffer.getNumSamples());
     
     juce::dsp::AudioBlock<float> originalBlock (buffer);
-    juce::dsp::AudioBlock<float> block (buffer);
     
     std::lock_guard<std::mutex> lock(oversamplingMutex);
     
-    juce::dsp::AudioBlock<float> oversampledBlock = oversampling->processSamplesUp (block);
+    juce::dsp::AudioBlock<float> oversampledBlock = oversampling->processSamplesUp (originalBlock);
     
     doCompressionDSP(oversampledBlock);
     
@@ -221,7 +220,7 @@ void APCompAudioProcessor::doCompressionDSP(juce::dsp::AudioBlock<float> block) 
             if (std::isnan(inputSampledb[i])) {
                 inputSampledb[i] = -200.0f;
             }
-
+            
             if (sidechainSelected) {
                 inputSampledb[i] = gainToDecibels(std::abs(channelData[i + 2][sample]));
             }
@@ -250,7 +249,7 @@ void APCompAudioProcessor::doCompressionDSP(juce::dsp::AudioBlock<float> block) 
             slewedSignal[i] = std::clamp(slewedSignal[i], -200.0, 1000.0); //infinite feedback stopper... more elegant solution?
             
             double gainReductionDecimal = decibelsToGain(gainReduction[i]);
-
+            
             if (inertiaCoefficientValue > 0) {
                 if (gainReduction[i] > previousGainReduction[i]) inertiaVelocity[i] += inertiaCoefficientValue * gainReductionDecimal * -0.001;
             } else {
@@ -260,7 +259,7 @@ void APCompAudioProcessor::doCompressionDSP(juce::dsp::AudioBlock<float> block) 
             inertiaVelocity[i] *= inertiaDecayCoefficient;
             if (inertiaVelocity[i] > 100) inertiaVelocity[i] = 100;
             if (inertiaVelocity[i] < -100) inertiaVelocity[i] = -100;
-        
+            
             gainReductionDecimal += inertiaVelocity[i];
             if (gainReductionDecimal > 1000) gainReductionDecimal = 1000;
             if (gainReductionDecimal < -1000) gainReductionDecimal = -1000;
@@ -274,14 +273,14 @@ void APCompAudioProcessor::doCompressionDSP(juce::dsp::AudioBlock<float> block) 
         if (gainReduction[0] < gainReduction[1]) {
             maxGainReduction = gainReduction[1];
         }
-                
+        
         for (int i = 0; i < 2 && i < totalNumInputChannels; i++) {
             gainReduction[i] = (maxGainReduction * channelLinkValue) + (gainReduction[i] * (channelLinkValue - 1) * -1);
             
             if (sidechainSelected) {
                 inputSampledb[i] = gainToDecibels(std::abs(inputSample[i]));
             }
-                            
+            
             outputSample[i] = decibelsToGain(inputSampledb[i] - gainReduction[i]) * (inputSample[i] < 0 ? -1.0f : 1.0f);
             outputSample[i] = outputSample[i] * decibelsToGain(outGainValue);
             
@@ -296,19 +295,15 @@ void APCompAudioProcessor::doCompressionDSP(juce::dsp::AudioBlock<float> block) 
             if (std::abs(outputSample[i]) > maxValuesForMeters[i+2]) maxValuesForMeters[i+2] = std::abs(outputSample[i]);
             if (gainReduction[i] > maxValuesForMeters[i+4]) maxValuesForMeters[i+4] = gainReduction[i];
         }
+    }
                 
-        for (int i = 0; i < 6; i++) {
-            if (maxValuesForMeters[i] > 100) maxValuesForMeters[i] = 100;
-            
-            if (maxValuesForMeters[i] > meterValues[i]) {
-                meterValues[i] = maxValuesForMeters[i];
-            } else {
-                if (releaseCoefficient > meterDecayCoefficient && i > 3) {
-                    meterValues[i] = meterValues[i] * releaseCoefficient;
-                } else {
-                    meterValues[i] = meterValues[i] * meterDecayCoefficient;
-                }
-            }
+    for (int i = 0; i < 6; i++) {
+        if (maxValuesForMeters[i] > 100) maxValuesForMeters[i] = 100;
+        
+        if (maxValuesForMeters[i] > meterValues[i]) {
+            meterValues[i] = maxValuesForMeters[i];
+        } else {
+            meterValues[i] = meterValues[i] * meterDecayCoefficient;
         }
     }
 }
