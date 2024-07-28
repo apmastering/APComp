@@ -1,0 +1,60 @@
+{
+  "Name": "APComp",
+  "Version": "1.0.0",
+  "Factory Info": {
+    "Vendor": "AP Mastering",
+    "URL": "www.APMastering.com",
+    "E-Mail": "",
+    "Flags": {
+      "Unicode": true,
+      "Classes Discardable": false,
+      "Component Non Discardable": false,
+    },
+  },
+  "Classes": [
+    {
+      "CID": "ABCDEF019182FAEB4D616E7552733570",
+      "Category": "Audio Module Class",
+      "Name": "APComp",
+      "Vendor": "AP Mastering",
+      "Version": "1.0.0",
+      "SDKVersion": "VST 3.7.11",
+      "Sub Categories": [
+        "Fx",
+        "Dynamics",
+      ],
+      "Class Flags": 0,
+      "Cardinality": 2147483647,
+      "Snapshots": [
+      ],
+    },
+    {
+      "CID": "ABCDEF011234ABCD4D616E7552733570",
+      "Category": "Component Controller Class",
+      "Name": "APComp",
+      "Vendor": "AP Mastering",
+      "Version": "1.0.0",
+      "SDKVersion": "VST 3.7.11",
+      "Sub Categories": [
+        "Fx",
+        "Dynamics",
+      ],
+      "Class Flags": 0,
+      "Cardinality": 2147483647,
+      "Snapshots": [
+      ],
+    },
+    {
+      "CID": "ABCDEF01C0DEF00D4D616E7552733570",
+      "Category": "Plugin Compatibility Class",
+      "Name": "APComp",
+      "Vendor": "AP Mastering",
+      "Version": "1.0.0",
+      "SDKVersion": "VST 3.7.11",
+      "Class Flags": 0,
+      "Cardinality": 2147483647,
+      "Snapshots": [
+      ],
+    },
+  ],
+}
