@@ -105,33 +105,37 @@ void APCompAudioProcessor::setOversampling(int selectedIndex)
     if (currentSamplesPerBlock < 4 || currentSampleRate < 100) {
         return;
     }
-    
-    std::lock_guard<std::mutex> lock(oversamplingMutex);
-    
+
+    std::shared_ptr<juce::dsp::Oversampling<float>> newOversampler;
+
     switch (selectedIndex) {
         case 0:
-            oversampling = std::make_unique<juce::dsp::Oversampling<float>>(4, 0, juce::dsp::Oversampling<float>::filterHalfBandPolyphaseIIR);
+            newOversampler = std::make_shared<juce::dsp::Oversampling<float>>(4, 0, juce::dsp::Oversampling<float>::filterHalfBandPolyphaseIIR);
             break;
         case 1:
-            oversampling = std::make_unique<juce::dsp::Oversampling<float>>(4, 1, juce::dsp::Oversampling<float>::filterHalfBandFIREquiripple);
+            newOversampler = std::make_shared<juce::dsp::Oversampling<float>>(4, 1, juce::dsp::Oversampling<float>::filterHalfBandFIREquiripple);
             break;
         case 2:
-            oversampling = std::make_unique<juce::dsp::Oversampling<float>>(4, 1, juce::dsp::Oversampling<float>::filterHalfBandPolyphaseIIR);
+            newOversampler = std::make_shared<juce::dsp::Oversampling<float>>(4, 1, juce::dsp::Oversampling<float>::filterHalfBandPolyphaseIIR);
             break;
         case 3:
-            oversampling = std::make_unique<juce::dsp::Oversampling<float>>(4, 2, juce::dsp::Oversampling<float>::filterHalfBandFIREquiripple);
+            newOversampler = std::make_shared<juce::dsp::Oversampling<float>>(4, 2, juce::dsp::Oversampling<float>::filterHalfBandFIREquiripple);
             break;
         case 4:
-            oversampling = std::make_unique<juce::dsp::Oversampling<float>>(4, 2, juce::dsp::Oversampling<float>::filterHalfBandPolyphaseIIR);
+            newOversampler = std::make_shared<juce::dsp::Oversampling<float>>(4, 2, juce::dsp::Oversampling<float>::filterHalfBandPolyphaseIIR);
             break;
     }
     
+    newOversampler->initProcessing(static_cast<size_t>(currentSamplesPerBlock));
+    newOversampler->reset();
+    
+    setLatencySamples(newOversampler->getLatencyInSamples());
+    
+    managedOversampler = newOversampler;
+    
     selectedOS = selectedIndex;
 
-    oversampling->initProcessing(static_cast<size_t>(currentSamplesPerBlock));
-    oversampling->reset();
-    setLatencySamples(oversampling->getLatencyInSamples());
-    oversampledSampleRate = currentSampleRate * oversampling->getOversamplingFactor();
+    oversampledSampleRate = currentSampleRate * newOversampler->getOversamplingFactor();
 }
 
 void APCompAudioProcessor::releaseResources()
@@ -143,36 +147,31 @@ bool APCompAudioProcessor::isBusesLayoutSupported (const BusesLayout& layouts) c
     return true;
 }
 
-void APCompAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce::MidiBuffer& midiMessages)
-{
+void APCompAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce::MidiBuffer& midiMessages) {
+    
     juce::ScopedNoDenormals noDenormals;
     
-    if (currentSamplesPerBlock < 4 || currentSampleRate < 100) {
-        return;
-    }
-    
-    totalNumInputChannels  = getTotalNumInputChannels();
+    totalNumInputChannels = getTotalNumInputChannels();
     totalNumOutputChannels = getTotalNumOutputChannels();
     
-    if (oversampledSampleRate < 1) return;
+    for (auto i = totalNumInputChannels; i < totalNumOutputChannels; ++i) buffer.clear(i, 0, buffer.getNumSamples());
     
-    for (auto i = totalNumInputChannels; i < totalNumOutputChannels; ++i)
-        buffer.clear(i, 0, buffer.getNumSamples());
+    if (oversampledSampleRate < 1) return;
+
+    auto oversampler = getCurrentOversampler();
+
+    if (!oversampler) return;
     
     juce::dsp::AudioBlock<float> originalBlock (buffer);
-    
-    std::lock_guard<std::mutex> lock(oversamplingMutex);
-    
-    juce::dsp::AudioBlock<float> oversampledBlock = oversampling->processSamplesUp (originalBlock);
+    juce::dsp::AudioBlock<float> oversampledBlock = oversampler->processSamplesUp (originalBlock);
     
     doCompressionDSP(oversampledBlock);
-    
-    oversampling->processSamplesDown (originalBlock);
-    
+
+    oversampler->processSamplesDown (originalBlock);
 }
     
     
-void APCompAudioProcessor::doCompressionDSP(juce::dsp::AudioBlock<float> block) {
+void APCompAudioProcessor::doCompressionDSP(juce::dsp::AudioBlock<float>& block) {
     
     const float inputGainValue = parameters.getRawParameterValue("inGain")->load();
     const float outGainValue = parameters.getRawParameterValue("outGain")->load();

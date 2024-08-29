@@ -32,7 +32,7 @@ public:
     void getStateInformation (juce::MemoryBlock& destData) override;
     void setStateInformation (const void* data, int sizeInBytes) override;
     
-    void doCompressionDSP(juce::dsp::AudioBlock<float> block);
+    void doCompressionDSP(juce::dsp::AudioBlock<float>& block);
     void setOversampling(int selectedIndex);
     
     std::atomic<float> meterValues[6] = {0};
@@ -53,8 +53,8 @@ public:
 private:
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (APCompAudioProcessor)
     
-    std::mutex oversamplingMutex;
-    std::unique_ptr<juce::dsp::Oversampling<float>> oversampling;
+    std::shared_ptr<juce::dsp::Oversampling<float>> managedOversampler;
+    std::shared_ptr<juce::dsp::Oversampling<float>> getCurrentOversampler() const { return std::atomic_load(&managedOversampler); }
     
     double outputSample[2] = {0};
     double slewedSignal[2] = {-200.0};
