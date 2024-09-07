@@ -1,11 +1,14 @@
 #pragma once
 
+#include <vector>
 
-class APComp  : public juce::AudioProcessor {
+
+class APComp  : public juce::AudioProcessor , public juce::AudioProcessorValueTreeState::Listener {
     
 public:
     
     APComp();
+    ~APComp() override;
     void prepareToPlay (double sampleRate, int samplesPerBlock) override;
     void releaseResources() override;
    #ifndef JucePlugin_PreferredChannelConfigurations
@@ -41,8 +44,8 @@ public:
     bool feedbackClip;
     int selectedOS;
     int oversampledSampleRate;
-
-    juce::AudioProcessorValueTreeState parameters;
+    
+    juce::AudioProcessorValueTreeState apvts;
     juce::AudioProcessorValueTreeState::ParameterLayout createParameterLayout();
             
 private:
@@ -54,13 +57,21 @@ private:
     double slewedSignal[2];
     double previousGainReduction[2];
     double gainReduction[2];
+    float inertiaVelocity[2];
     float meterDecayCoefficient;
     int totalNumInputChannels;
     int totalNumOutputChannels;
-    float inertiaVelocity[2];
-    size_t currentSamplesPerBlock;
     int currentSampleRate;
     int cachedOversamplingIndex;
+    size_t currentSamplesPerBlock;
+    std::vector<float> parameterCache;
+    
+    void initializeParameterList();
+    void parameterChanged(const juce::String& parameterID, float newValue) override;
+    void addParameterListeners();
+    void removeParameterListeners();
+    float getKnobValueFromCache(int index) const;
+    bool getBoolValueFromCache(int index) const;
     
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (APComp)
 };

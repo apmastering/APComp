@@ -13,12 +13,32 @@ enum class OversamplingOption {
     IIR_2x = 4
 };
 
+enum class ParameterNames {
+    inGain          = 0,
+    outGain         = 1,
+    convexity       = 2,
+    attack          = 3,
+    release         = 4,
+    threshold       = 5,
+    ratio           = 6,
+    channelLink     = 7,
+    feedback        = 8,
+    inertia         = 9,
+    inertiaDecay    = 10,
+    sidechain       = 11,
+    metersOn        = 12,
+    oversampling    = 13,
+    END             = 14
+};
+
 
 double linearToExponential(double linearValue, double minValue, double maxValue);
 double gainToDecibels(double gain);
 double decibelsToGain(double decibels);
 std::string getOversamplingOptionString(OversamplingOption option);
 OversamplingOption getOversamplingOptionFromIndex(int index);
+std::string getParameterNameFromEnum(ParameterNames index);
+ParameterNames getParameterEnumFromParameterName(const std::string& name);
 
 class APFont {
 public:

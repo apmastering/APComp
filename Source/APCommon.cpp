@@ -1,6 +1,7 @@
 #include <algorithm>
 #include <cmath>
 #include <limits>
+#include <unordered_map>
 
 #include "APCommon.h"
 
@@ -50,6 +51,54 @@ OversamplingOption getOversamplingOptionFromIndex(int index) {
         case 3: return OversamplingOption::FIR_2x;
         case 4: return OversamplingOption::IIR_2x;
         default: throw std::out_of_range("Invalid index for OversamplingOption");
+    }
+}
+
+
+std::string getParameterNameFromEnum(ParameterNames index) {
+    switch (index) {
+        case ParameterNames::inGain:        return "inGain";
+        case ParameterNames::outGain:       return "outGain";
+        case ParameterNames::convexity:     return "convexity";
+        case ParameterNames::attack:        return "attack";
+        case ParameterNames::release:       return "release";
+        case ParameterNames::threshold:     return "threshold";
+        case ParameterNames::ratio:         return "ratio";
+        case ParameterNames::channelLink:   return "channelLink";
+        case ParameterNames::feedback:      return "feedback";
+        case ParameterNames::inertia:       return "inertia";
+        case ParameterNames::inertiaDecay:  return "inertiaDecay";
+        case ParameterNames::sidechain:     return "sidechain";
+        case ParameterNames::metersOn:      return "metersOn";
+        case ParameterNames::oversampling:  return "oversampling";
+        default: throw std::out_of_range("Invalid index for getParameterNameFromEnum");
+    }
+}
+
+
+ParameterNames getParameterEnumFromParameterName(const std::string& name) {
+    static const std::unordered_map<std::string, ParameterNames> nameToEnumMap = {
+        {"inGain",        ParameterNames::inGain},
+        {"outGain",       ParameterNames::outGain},
+        {"convexity",     ParameterNames::convexity},
+        {"attack",        ParameterNames::attack},
+        {"release",       ParameterNames::release},
+        {"threshold",     ParameterNames::threshold},
+        {"ratio",         ParameterNames::ratio},
+        {"channelLink",   ParameterNames::channelLink},
+        {"feedback",      ParameterNames::feedback},
+        {"inertia",       ParameterNames::inertia},
+        {"inertiaDecay",  ParameterNames::inertiaDecay},
+        {"sidechain",     ParameterNames::sidechain},
+        {"metersOn",      ParameterNames::metersOn},
+        {"oversampling",  ParameterNames::oversampling}
+    };
+
+    auto it = nameToEnumMap.find(name);
+    if (it != nameToEnumMap.end()) {
+        return it->second;
+    } else {
+        throw std::invalid_argument("Invalid parameter name for getEnumFromParameterName");
     }
 }
 

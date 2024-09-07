@@ -10,19 +10,24 @@
 
 void APComp::doCompressionDSP(juce::dsp::AudioBlock<float>& block) {
     
-    const float inputGainValue = parameters.getRawParameterValue("inGain")->load();
-    const float outGainValue = parameters.getRawParameterValue("outGain")->load();
-    const float convexityValue = parameters.getRawParameterValue("convexity")->load();
-    const float attackValue = linearToExponential(parameters.getRawParameterValue("attack")->load(), Constants::attackMin, Constants::attackMax) / 1000;
-    const float releaseValue = linearToExponential(parameters.getRawParameterValue("release")->load(), Constants::releaseMin, Constants::releaseMax) / 1000;
-    const float thresholdValue = parameters.getRawParameterValue("threshold")->load();
-    const float ratioValue = parameters.getRawParameterValue("ratio")->load();
-    const float channelLinkValue = parameters.getRawParameterValue("channelLink")->load() / 100;
-    const float feedbackValue = parameters.getRawParameterValue("feedback")->load();
-    bool sidechainSelected = parameters.getRawParameterValue("sidechain")->load();
-    const float inertiaCoefficientValue = parameters.getRawParameterValue("inertia")->load();
-    float inertiaDecayCoefficient = parameters.getRawParameterValue("inertiaDecay")->load();
+   const float attackValue  = linearToExponential(getKnobValueFromCache(static_cast<int>(ParameterNames::attack)),
+                                                  Constants::attackMin,
+                                                  Constants::attackMax) / 1000;
+   const float releaseValue = linearToExponential(getKnobValueFromCache(static_cast<int>(ParameterNames::release)),
+                                                  Constants::releaseMin,
+                                                  Constants::releaseMax) / 1000;
     
+    const float inputGainValue          = getKnobValueFromCache(static_cast<int>(ParameterNames::inGain));
+    const float outGainValue            = getKnobValueFromCache(static_cast<int>(ParameterNames::outGain));
+    const float convexityValue          = getKnobValueFromCache(static_cast<int>(ParameterNames::convexity));
+    const float thresholdValue          = getKnobValueFromCache(static_cast<int>(ParameterNames::threshold));
+    const float ratioValue              = getKnobValueFromCache(static_cast<int>(ParameterNames::ratio));
+    const float channelLinkValue        = getKnobValueFromCache(static_cast<int>(ParameterNames::channelLink)) / 100;
+    const float feedbackValue           = getKnobValueFromCache(static_cast<int>(ParameterNames::feedback));
+    const float inertiaCoefficientValue = getKnobValueFromCache(static_cast<int>(ParameterNames::inertia));
+          float inertiaDecayCoefficient = getKnobValueFromCache(static_cast<int>(ParameterNames::inertiaDecay));
+          bool  sidechainSelected       = getBoolValueFromCache(static_cast<int>(ParameterNames::sidechain));
+
     const double attackCoefficient = std::exp(-1.0 / (oversampledSampleRate * attackValue));
     const double releaseCoefficient = std::exp(-1.0 / (oversampledSampleRate * releaseValue));
     

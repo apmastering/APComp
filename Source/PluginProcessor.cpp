@@ -13,18 +13,85 @@ meterValuesBackPointer(meterValuesBack),
 feedbackClip(false),
 selectedOS(-1),
 oversampledSampleRate(0),
-parameters(*this, nullptr, "PARAMETERS", createParameterLayout()),
+apvts(*this, nullptr, "PARAMETERS", createParameterLayout()),
 outputSample { 0, 0 },
 slewedSignal { -200.0, -200.0 },
 previousGainReduction { -200.0, -200.0 },
 gainReduction { 0, 0 },
+inertiaVelocity { 0, 0 },
 meterDecayCoefficient(0.99f),
 totalNumInputChannels(0),
 totalNumOutputChannels(0),
-inertiaVelocity { 0, 0 },
-currentSamplesPerBlock(0),
 currentSampleRate(0),
-cachedOversamplingIndex(-1) {}
+cachedOversamplingIndex(-1),
+currentSamplesPerBlock(0) {
+
+    initializeParameterList();
+    
+    addParameterListeners();
+}
+
+
+APComp::~APComp() {
+
+    removeParameterListeners();
+}
+
+
+void APComp::initializeParameterList() {
+    
+    parameterCache.resize(static_cast<int>(ParameterNames::END) + 1);
+}
+
+
+void APComp::addParameterListeners() {
+    
+    for (int i = 0; i < static_cast<int>(ParameterNames::END); ++i) {
+        
+        if (i == static_cast<int>(ParameterNames::END)) continue;
+        
+        ParameterNames param = static_cast<ParameterNames>(i);
+        std::string paramName = getParameterNameFromEnum(param);
+        
+        apvts.addParameterListener(paramName, this);
+    }
+}
+
+
+void APComp::removeParameterListeners() {
+    
+    for (int i = 0; i < static_cast<int>(ParameterNames::END); ++i) {
+        
+        if (i == static_cast<int>(ParameterNames::END)) continue;
+        
+        ParameterNames param = static_cast<ParameterNames>(i);
+        std::string paramName = getParameterNameFromEnum(param);
+        
+        apvts.removeParameterListener(paramName, this);
+    }
+}
+
+
+void APComp::parameterChanged(const juce::String& parameterID, float newValue) {
+        
+    ParameterNames paramEnum = getParameterEnumFromParameterName(parameterID.toStdString());
+    
+    int index = static_cast<int>(paramEnum);
+    
+    parameterCache[index] = newValue;
+}
+
+
+float APComp::getKnobValueFromCache(int index) const {
+    
+    return parameterCache[index];
+}
+
+
+bool APComp::getBoolValueFromCache(int index) const {
+    
+    return parameterCache[index] >= 0.5f;
+}
 
 
 void APComp::prepareToPlay (double sampleRate, int samplesPerBlock)
@@ -84,8 +151,8 @@ void APComp::setOversampling(int selectedIndex) {
 void APComp::processBlock (juce::AudioBuffer<float>& buffer, juce::MidiBuffer& midiMessages) {
     
     juce::ScopedNoDenormals noDenormals;
-    
-    int overSamplingSelection = parameters.getRawParameterValue("oversampling")->load();
+
+    int overSamplingSelection = static_cast<int>(getKnobValueFromCache(static_cast<int>(ParameterNames::oversampling)));
 
     if (cachedOversamplingIndex != overSamplingSelection) {
 
@@ -114,8 +181,3 @@ void APComp::processBlock (juce::AudioBuffer<float>& buffer, juce::MidiBuffer& m
 
     oversampler->processSamplesDown (originalBlock);
 }
-    
-
-
-
-

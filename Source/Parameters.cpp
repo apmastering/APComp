@@ -10,8 +10,8 @@ juce::AudioProcessorValueTreeState::ParameterLayout APComp::createParameterLayou
     params.push_back (std::make_unique<juce::AudioParameterFloat> ("inGain",        "Input Gain",   -12.0f, 24.0f, 0.0f));
     params.push_back (std::make_unique<juce::AudioParameterFloat> ("outGain",       "Output Gain",  -12.0f, 24.0f, 0.0f));
     params.push_back (std::make_unique<juce::AudioParameterFloat> ("convexity",     "Convexity",    -2.0f, 2.0f, 1.0f));
-    params.push_back (std::make_unique<juce::AudioParameterInt>   ("attack",        "Attack",   Constants::attackMin, Constants::attackMax, 90));
-    params.push_back (std::make_unique<juce::AudioParameterInt>   ("release",       "Release",  Constants::releaseMin, Constants::releaseMax, 400));
+    params.push_back (std::make_unique<juce::AudioParameterFloat> ("attack",        "Attack",   Constants::attackMin, Constants::attackMax, 90.0f));
+    params.push_back (std::make_unique<juce::AudioParameterFloat> ("release",       "Release",  Constants::releaseMin, Constants::releaseMax, 400.0f));
     params.push_back (std::make_unique<juce::AudioParameterFloat> ("threshold",     "Threshold",    -70.0f, 0.0f, 0.0f));
     params.push_back (std::make_unique<juce::AudioParameterFloat> ("ratio",         "Ratio",        1.0f, 6.0f, 6.0f));
     params.push_back (std::make_unique<juce::AudioParameterFloat> ("channelLink",   "Channel Link", 0.0f, 100.0f, 100.0f));

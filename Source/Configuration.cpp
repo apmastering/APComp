@@ -22,7 +22,7 @@ juce::AudioProcessorEditor* APComp::createEditor() { return new GUI (*this); }
 
 void APComp::getStateInformation (juce::MemoryBlock& destData) {
     
-    std::unique_ptr<juce::XmlElement> xml (parameters.state.createXml());
+    std::unique_ptr<juce::XmlElement> xml (apvts.state.createXml());
     copyXmlToBinary (*xml, destData);
 }
 
@@ -31,9 +31,9 @@ void APComp::setStateInformation (const void* data, int sizeInBytes) {
         std::unique_ptr<juce::XmlElement> xml (getXmlFromBinary (data, sizeInBytes));
         if (xml != nullptr)
         {
-            if (xml->hasTagName (parameters.state.getType()))
+            if (xml->hasTagName (apvts.state.getType()))
             {
-                parameters.state = juce::ValueTree::fromXml (*xml);
+                apvts.state = juce::ValueTree::fromXml (*xml);
             }
         }
 }

@@ -2,8 +2,8 @@
 
 
 namespace Constants {
-    constexpr int attackMin = 0;
-    constexpr int attackMax = 200;
-    constexpr int releaseMin = 10;
-    constexpr int releaseMax = 3000;
+    constexpr int attackMin = 0.0f;
+    constexpr int attackMax = 200.0f;
+    constexpr int releaseMin = 10.0f;
+    constexpr int releaseMax = 3000.0f;
 }
