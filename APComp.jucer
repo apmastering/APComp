@@ -6,19 +6,25 @@
               pluginVST3Category="Dynamics" pluginAAXCategory="0">
   <MAINGROUP id="Hvoxjg" name="APComp">
     <GROUP id="{75A4BD03-6758-0836-43A9-891F6FB902AD}" name="Source">
+      <FILE id="VbexeQ" name="Constants.h" compile="0" resource="0" file="Source/Constants.h"/>
+      <FILE id="u3HxHl" name="Parameters.cpp" compile="1" resource="0" file="Source/Parameters.cpp"/>
+      <FILE id="SPPuzh" name="DSP.cpp" compile="1" resource="0" file="Source/DSP.cpp"/>
+      <FILE id="fPIwz8" name="APCommon.h" compile="0" resource="0" file="Source/APCommon.h"/>
       <FILE id="wgnZxb" name="Knockout-Flyweight.otf" compile="0" resource="1"
             file="Source/media/Knockout-Flyweight.otf"/>
       <FILE id="oJKTnJ" name="APCommon.cpp" compile="1" resource="0" file="Source/APCommon.cpp"/>
       <FILE id="GsBT7v" name="PluginProcessor.cpp" compile="1" resource="0"
             file="Source/PluginProcessor.cpp"/>
+      <FILE id="SOTYYD" name="Configuration.cpp" compile="1" resource="0"
+            file="Source/Configuration.cpp"/>
       <FILE id="z5AMgn" name="PluginProcessor.h" compile="0" resource="0"
             file="Source/PluginProcessor.h"/>
+      <FILE id="AJ2PWE" name="bgflat.png" compile="0" resource="1" file="Source/media/bgflat.png"/>
+      <FILE id="uqU5BQ" name="knobflat.png" compile="0" resource="1" file="Source/media/knobflat.png"/>
       <FILE id="gaH8NG" name="PluginEditor.cpp" compile="1" resource="0"
             file="Source/PluginEditor.cpp"/>
       <FILE id="K5AM2v" name="PluginEditor.h" compile="0" resource="0" file="Source/PluginEditor.h"/>
     </GROUP>
-    <FILE id="AJ2PWE" name="bgflat.png" compile="0" resource="1" file="Source/media/bgflat.png"/>
-    <FILE id="uqU5BQ" name="knobflat.png" compile="0" resource="1" file="Source/media/knobflat.png"/>
   </MAINGROUP>
   <MODULES>
     <MODULE id="juce_audio_basics" showAllCode="1" useLocalCopy="0" useGlobalPath="1"/>

@@ -1,29 +1,67 @@
+#include <algorithm>
+
+#include "APCommon.h"
 #include "PluginProcessor.h"
 #include "PluginEditor.h"
-#include <algorithm>
-#include "APCommon.h"
+#include "Constants.h"
 
-APCompAudioProcessorEditor::APCompAudioProcessorEditor (APCompAudioProcessor& p)
-    : AudioProcessorEditor (&p), audioProcessor (p)
-{
+
+GUI::GUI (APComp& p)
+: AudioProcessorEditor (&p),
+audioProcessor (p),
+knobLook1(),
+backgroundImage (juce::ImageFileFormat::loadFrom(BinaryData::bgflat_png, BinaryData::bgflat_pngSize)),
+customTypeface (APFont::getFont()),
+inGainSlider(),
+outGainSlider(),
+convexitySlider(),
+attackSlider(),
+releaseSlider(),
+thresholdSlider(),
+ratioSlider(),
+channelLinkSlider(),
+sidechainSlider(),
+feedbackSlider(),
+inertiaSlider(),
+inertiaDecaySlider(),
+metersOnButton(),
+oversamplingBox(),
+inGainAttachment (std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(audioProcessor.parameters, "inGain", inGainSlider)),
+outGainAttachment (std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(audioProcessor.parameters, "outGain", outGainSlider)),
+convexityAttachment (std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(audioProcessor.parameters, "convexity", convexitySlider)),
+attackAttachment (std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(audioProcessor.parameters, "attack", attackSlider)),
+releaseAttachment (std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(audioProcessor.parameters, "release", releaseSlider)),
+thresholdAttachment (std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(audioProcessor.parameters, "threshold", thresholdSlider)),
+ratioAttachment (std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(audioProcessor.parameters, "ratio", ratioSlider)),
+channelLinkAttachment (std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(audioProcessor.parameters, "channelLink", channelLinkSlider)),
+sidechainAttachment (std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(audioProcessor.parameters, "sidechain", sidechainSlider)),
+feedbackAttachment (std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(audioProcessor.parameters, "feedback", feedbackSlider)),
+inertiaAttachment (std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(audioProcessor.parameters, "inertia", inertiaSlider)),
+inertiaDecayAttachment (std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(audioProcessor.parameters, "inertiaDecay", inertiaDecaySlider)),
+metersOnAttachment (std::make_unique<juce::AudioProcessorValueTreeState::ButtonAttachment>(audioProcessor.parameters, "metersOn", metersOnButton)),
+oversamplingAttachment (std::make_unique<juce::AudioProcessorValueTreeState::ComboBoxAttachment>(audioProcessor.parameters, "oversampling", oversamplingBox)) {
+          
     for (size_t i = 0; i < sliders.size(); ++i) {
-            juce::Slider& slider = sliders[i].get();
-            slider.setSliderStyle(juce::Slider::RotaryVerticalDrag);
-            slider.setTextBoxStyle(juce::Slider::NoTextBox, false, 0, 0);
-            slider.setName(sliderNames[i]);
-            addAndMakeVisible(slider);
-            slider.addListener(this);
-        }
+        juce::Slider& slider = sliders[i].get();
+        slider.setSliderStyle(juce::Slider::RotaryVerticalDrag);
+        slider.setTextBoxStyle(juce::Slider::NoTextBox, false, 0, 0);
+        slider.setName(sliderNames[i]);
+        addAndMakeVisible(slider);
+        slider.addListener(this);
+    }
     
-    //explicit naming mirrored in plugin processor... change this!
-    oversamplingBox.addItem("None", 1);
-    oversamplingBox.addItem("1x FIR", 2);
-    oversamplingBox.addItem("1x IIR", 3);
-    oversamplingBox.addItem("2x FIR", 4);
-    oversamplingBox.addItem("2x IIR", 5);
+    oversamplingBox.addItem(getOversamplingOptionString(OversamplingOption::None),   static_cast<int>(OversamplingOption::None)   + 1);
+    oversamplingBox.addItem(getOversamplingOptionString(OversamplingOption::FIR_1x), static_cast<int>(OversamplingOption::FIR_1x) + 1);
+    oversamplingBox.addItem(getOversamplingOptionString(OversamplingOption::IIR_1x), static_cast<int>(OversamplingOption::IIR_1x) + 1);
+    oversamplingBox.addItem(getOversamplingOptionString(OversamplingOption::FIR_2x), static_cast<int>(OversamplingOption::FIR_2x) + 1);
+    oversamplingBox.addItem(getOversamplingOptionString(OversamplingOption::IIR_2x), static_cast<int>(OversamplingOption::IIR_2x) + 1);
+    
     oversamplingBox.addListener(this);
     addAndMakeVisible(oversamplingBox);
-        
+    oversamplingBox.setSelectedId(1);
+    
+    metersOnButton.setColour(juce::ToggleButton::ColourIds::tickColourId, juce::Colours::black);
+    metersOnButton.setColour(juce::ToggleButton::ColourIds::tickDisabledColourId, juce::Colours::black);
     addAndMakeVisible(metersOnButton);
     metersOnButton.addListener(this);
 
@@ -39,39 +77,15 @@ APCompAudioProcessorEditor::APCompAudioProcessorEditor (APCompAudioProcessor& p)
     feedbackSlider.setLookAndFeel(&knobLook1);
     inertiaSlider.setLookAndFeel(&knobLook1);
     inertiaDecaySlider.setLookAndFeel(&knobLook1);
-    
-    metersOnButton.setColour(juce::ToggleButton::ColourIds::tickColourId, juce::Colours::black);
-    metersOnButton.setColour(juce::ToggleButton::ColourIds::tickDisabledColourId, juce::Colours::black);
-
-    inGainAttachment.reset (new juce::AudioProcessorValueTreeState::SliderAttachment (audioProcessor.parameters, "inGain", inGainSlider));
-    outGainAttachment.reset (new juce::AudioProcessorValueTreeState::SliderAttachment (audioProcessor.parameters, "outGain", outGainSlider));
-    convexityAttachment.reset (new juce::AudioProcessorValueTreeState::SliderAttachment (audioProcessor.parameters, "convexity", convexitySlider));
-    attackAttachment.reset (new juce::AudioProcessorValueTreeState::SliderAttachment (audioProcessor.parameters, "attack", attackSlider));
-    releaseAttachment.reset (new juce::AudioProcessorValueTreeState::SliderAttachment (audioProcessor.parameters, "release", releaseSlider));
-    thresholdAttachment.reset (new juce::AudioProcessorValueTreeState::SliderAttachment (audioProcessor.parameters, "threshold", thresholdSlider));
-    ratioAttachment.reset (new juce::AudioProcessorValueTreeState::SliderAttachment (audioProcessor.parameters, "ratio", ratioSlider));
-    channelLinkAttachment.reset (new juce::AudioProcessorValueTreeState::SliderAttachment (audioProcessor.parameters, "channelLink", channelLinkSlider));
-    sidechainAttachment.reset (new juce::AudioProcessorValueTreeState::SliderAttachment (audioProcessor.parameters, "sidechain", sidechainSlider));
-    feedbackAttachment.reset (new juce::AudioProcessorValueTreeState::SliderAttachment (audioProcessor.parameters, "feedback", feedbackSlider));
-    inertiaAttachment.reset (new juce::AudioProcessorValueTreeState::SliderAttachment (audioProcessor.parameters, "inertia", inertiaSlider));
-    inertiaDecayAttachment.reset (new juce::AudioProcessorValueTreeState::SliderAttachment (audioProcessor.parameters, "inertiaDecay", inertiaDecaySlider));
-    
-    metersOnAttachment.reset (new juce::AudioProcessorValueTreeState::ButtonAttachment (audioProcessor.parameters, "metersOn", metersOnButton));
-    
-    oversamplingAttachment.reset (new juce::AudioProcessorValueTreeState::ComboBoxAttachment (audioProcessor.parameters, "oversampling", oversamplingBox));
-    
-    backgroundImage = juce::ImageFileFormat::loadFrom(BinaryData::bgflat_png, BinaryData::bgflat_pngSize);
-
-    auto typeface = juce::Typeface::createSystemTypefaceFor(BinaryData::KnockoutFlyweight_otf, BinaryData::KnockoutFlyweight_otfSize);
-    customTypeface = juce::FontOptions (typeface);
 
     setSize (760, 400);
     startTimer(refreshRate);
     screenTimeoutCountdown = 0;
 }
 
-APCompAudioProcessorEditor::~APCompAudioProcessorEditor()
-{
+
+GUI::~GUI() {
+    
     for (auto& sliderRef : sliders) {
         juce::Slider& slider = sliderRef.get();
         slider.removeListener(this);
@@ -96,11 +110,11 @@ APCompAudioProcessorEditor::~APCompAudioProcessorEditor()
     stopTimer();
 }
 
-void APCompAudioProcessorEditor::sliderValueChanged(juce::Slider* slider)
-   {
+
+void GUI::sliderValueChanged(juce::Slider* slider) {
+    
     activeSliderName = slider->getName().toStdString();
     
-    // bodge
     if (activeSliderName == "Sidechain Input") {
         activeSliderValue = 0;
         if (slider->getValue()) activeSliderValue = 1;
@@ -111,8 +125,9 @@ void APCompAudioProcessorEditor::sliderValueChanged(juce::Slider* slider)
     screenTimeoutCountdown = (1000 / refreshRate) * screenTimeoutCountdownTimeSeconds;
 }
 
-void APCompAudioProcessorEditor::buttonClicked(juce::Button* button)
-{
+
+void GUI::buttonClicked(juce::Button* button) {
+    
     if (button == &metersOnButton) {
         if (button->getToggleState()) {
             metersActive = true;
@@ -122,18 +137,18 @@ void APCompAudioProcessorEditor::buttonClicked(juce::Button* button)
     }
 }
 
-void APCompAudioProcessorEditor::comboBoxChanged(juce::ComboBox* comboBox)
-{
+
+void GUI::comboBoxChanged(juce::ComboBox* comboBox) {
+    
     if (comboBox == &oversamplingBox) {
-        int selectedIndex = oversamplingBox.getSelectedItemIndex();
-        // this is kind of weird as there is no real convention here between processor and editor
-        audioProcessor.setOversampling(selectedIndex);
+
+        int index = oversamplingBox.getSelectedItemIndex();
+        audioProcessor.setOversampling(index);
     }
 }
 
 
-void APCompAudioProcessorEditor::paint (juce::Graphics& g)
-{
+void GUI::paint (juce::Graphics& g) {
     
     if (backgroundImage.isValid()) {
         g.drawImage(backgroundImage, getLocalBounds().toFloat());
@@ -150,7 +165,7 @@ void APCompAudioProcessorEditor::paint (juce::Graphics& g)
         
     if (screenTimeoutCountdown > 0) {
         
-        // unacceptable levels of bodge. you have entered bodge city
+        // This chaotic string manipulation is going to be replaced when I make a new version
         // ---------------------------------------------------------
         std::istringstream iss(activeSliderName);
         std::string token1, token2;
@@ -158,10 +173,10 @@ void APCompAudioProcessorEditor::paint (juce::Graphics& g)
         std::getline(iss, token2);
         
         if (token1 == "Attack") {
-            valueToWrite = linearToExponential(valueToWrite, audioProcessor.attackMin, audioProcessor.attackMax);
+            valueToWrite = linearToExponential(valueToWrite, Constants::attackMin, Constants::attackMax);
         }
         if (token1 == "Release") {
-            valueToWrite = linearToExponential(valueToWrite, audioProcessor.releaseMin, audioProcessor.releaseMax);
+            valueToWrite = linearToExponential(valueToWrite, Constants::releaseMin, Constants::releaseMax);
         }
         
         std::stringstream stream;
@@ -193,7 +208,7 @@ void APCompAudioProcessorEditor::paint (juce::Graphics& g)
             }
         }
         
-        // end of bodge city
+        // end of weird string stuff
         // ---------------------------------------------------------
     }
     
@@ -283,8 +298,9 @@ void APCompAudioProcessorEditor::paint (juce::Graphics& g)
     if (audioProcessor.feedbackClip) g.fillEllipse(424, 145, 6, 6);
 }
 
-void APCompAudioProcessorEditor::resized()
-{
+
+void GUI::resized() {
+    
     attackSlider.setBounds          (347, 288, 100, 100);
     releaseSlider.setBounds         (461, 288, 100, 100);
     convexitySlider.setBounds       (13,  160, 100, 100);
@@ -302,15 +318,16 @@ void APCompAudioProcessorEditor::resized()
 }
 
 
-void APCompAudioProcessorEditor::timerCallback()
-{
+void GUI::timerCallback() {
+    
     repaint();
+    
     if (screenTimeoutCountdown > 0) screenTimeoutCountdown--;
 }
 
 
-KnobLook1::KnobLook1()
-{
+KnobLook1::KnobLook1() {
+    
     knobImage = juce::ImageFileFormat::loadFrom(BinaryData::knobflat_png, BinaryData::knobflat_pngSize);
 }
 

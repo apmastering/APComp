@@ -1,7 +1,6 @@
 #pragma once
-#include <JuceHeader.h>
+
 #include "PluginProcessor.h"
-#include <juce_gui_basics/juce_gui_basics.h>
 
 
 class KnobLook1 : public juce::LookAndFeel_V4
@@ -15,11 +14,11 @@ private:
 };
 
 
-class APCompAudioProcessorEditor  : public juce::AudioProcessorEditor, private juce::Timer, public juce::Slider::Listener, public juce::Button::Listener, public juce::ComboBox::Listener
+class GUI  : public juce::AudioProcessorEditor, private juce::Timer, public juce::Slider::Listener, public juce::Button::Listener, public juce::ComboBox::Listener
 {
 public:
-    APCompAudioProcessorEditor (APCompAudioProcessor&);
-    ~APCompAudioProcessorEditor() override;
+    GUI (APComp&);
+    ~GUI() override;
     void paint (juce::Graphics&) override;
     void resized() override;
     void sliderValueChanged(juce::Slider* slider) override;
@@ -29,7 +28,7 @@ public:
     bool metersActive = true;
 
 private:
-    APCompAudioProcessor& audioProcessor;
+    APComp& audioProcessor;
         
     KnobLook1 knobLook1;
     
@@ -113,5 +112,5 @@ private:
     int gainReductionTextHoldConstant = 10;
     float previousGainReduction = 0.0f;
             
-    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (APCompAudioProcessorEditor)
+    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (GUI)
 };

@@ -1,16 +1,11 @@
 #pragma once
-#include <JuceHeader.h>
-#include <vector>
-#include <memory>
-#include <mutex>
-#include <thread>
-#include <atomic>
 
-class APCompAudioProcessor  : public juce::AudioProcessor
-{
+
+class APComp  : public juce::AudioProcessor {
+    
 public:
-    APCompAudioProcessor();
-    ~APCompAudioProcessor() override;
+    
+    APComp();
     void prepareToPlay (double sampleRate, int samplesPerBlock) override;
     void releaseResources() override;
    #ifndef JucePlugin_PreferredChannelConfigurations
@@ -35,23 +30,22 @@ public:
     void doCompressionDSP(juce::dsp::AudioBlock<float>& block);
     void setOversampling(int selectedIndex);
     
-    std::atomic<float> meterValues[6] = {0};
-    std::atomic<bool> feedbackClip { false };
-    std::atomic<int> selectedOS { -1 };
-    std::atomic<double> oversampledSampleRate { 0.0 };
+    static constexpr int meterCount = 6;
+
+    float meterValues[meterCount];
+    float meterValuesBack[meterCount];
     
-    const int attackMin = 0;
-    const int attackMax = 200;
-    const int releaseMin = 10;
-    const int releaseMax = 3000;
+    float* meterValuesFrontPointer;
+    float* meterValuesBackPointer;
+    
+    bool feedbackClip;
+    int selectedOS;
+    int oversampledSampleRate;
 
     juce::AudioProcessorValueTreeState parameters;
     juce::AudioProcessorValueTreeState::ParameterLayout createParameterLayout();
-    
-    juce::ValueTree state;
-        
+            
 private:
-    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (APCompAudioProcessor)
     
     std::shared_ptr<juce::dsp::Oversampling<float>> managedOversampler;
     std::shared_ptr<juce::dsp::Oversampling<float>> getCurrentOversampler() const { return std::atomic_load(&managedOversampler); }
@@ -66,4 +60,6 @@ private:
     float inertiaVelocity[2] = {0};
     size_t currentSamplesPerBlock = 0;
     int currentSampleRate = 0;
+    
+    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (APComp)
 };
