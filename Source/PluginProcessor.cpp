@@ -1,10 +1,3 @@
-//#include <iostream>
-//#include <cmath>
-//#include <vector>
-//#include <algorithm>
-//#include <utility>
-//#include <cstring>
-
 #include "APCommon.h"
 #include "PluginProcessor.h"
 
@@ -52,11 +45,9 @@ void APComp::prepareToPlay (double sampleRate, int samplesPerBlock)
 }
 
 
-void APComp::setOversampling(int selectedIndex)
-{
-    if (currentSamplesPerBlock < 4 || currentSampleRate < 100) {
-        return;
-    }
+void APComp::setOversampling(int selectedIndex) {
+    
+    if (currentSamplesPerBlock < 4 || currentSampleRate < 100) { return; }
 
     std::shared_ptr<juce::dsp::Oversampling<float>> newOversampler;
     

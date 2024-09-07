@@ -48,8 +48,8 @@ public:
 private:
     
     std::shared_ptr<juce::dsp::Oversampling<float>> managedOversampler;
-    std::shared_ptr<juce::dsp::Oversampling<float>> getCurrentOversampler() const { return std::atomic_load(&managedOversampler); }
-    
+    std::shared_ptr<juce::dsp::Oversampling<float>> getCurrentOversampler() const { return managedOversampler; }
+
     double outputSample[2] = {0};
     double slewedSignal[2] = {-200.0};
     double previousGainReduction[2] = {-200.0};
