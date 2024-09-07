@@ -3,20 +3,28 @@
 
 
 APComp::APComp()
-: AudioProcessor (BusesProperties()
-                  .withInput  ("Input",  juce::AudioChannelSet::quadraphonic(), true)
-                  .withOutput ("Output", juce::AudioChannelSet::stereo(), true)),
+: AudioProcessor(BusesProperties()
+                 .withInput("Input", juce::AudioChannelSet::quadraphonic(), true)
+                 .withOutput("Output", juce::AudioChannelSet::stereo(), true)),
+meterValues {},
+meterValuesBack {},
+meterValuesFrontPointer(meterValues),
+meterValuesBackPointer(meterValuesBack),
 feedbackClip(false),
 selectedOS(-1),
 oversampledSampleRate(0),
-parameters (*this, nullptr, "PARAMETERS", createParameterLayout()) {
-    
-    std::fill(meterValues, meterValues + meterCount, 0.0f);
-    std::fill(meterValuesBack,  meterValuesBack  + meterCount, 0.0f);
-    
-    meterValuesFrontPointer = meterValues;
-    meterValuesBackPointer = meterValuesBack;
-}
+parameters(*this, nullptr, "PARAMETERS", createParameterLayout()),
+outputSample { 0, 0 },
+slewedSignal { -200.0, -200.0 },
+previousGainReduction { -200.0, -200.0 },
+gainReduction { 0, 0 },
+meterDecayCoefficient(0.99f),
+totalNumInputChannels(0),
+totalNumOutputChannels(0),
+inertiaVelocity { 0, 0 },
+currentSamplesPerBlock(0),
+currentSampleRate(0),
+cachedOversamplingIndex(-1) {}
 
 
 void APComp::prepareToPlay (double sampleRate, int samplesPerBlock)
@@ -31,17 +39,6 @@ void APComp::prepareToPlay (double sampleRate, int samplesPerBlock)
         
     currentSamplesPerBlock = samplesPerBlock;
     currentSampleRate = sampleRate;
-    
-    auto rawParam = parameters.getRawParameterValue("oversampling");
-    if (rawParam == nullptr)
-    {
-        jassertfalse;
-        return;
-    }
-    
-    int rawValue = static_cast<int>(rawParam->load());
-    
-    setOversampling(rawValue);
 }
 
 
@@ -87,6 +84,17 @@ void APComp::setOversampling(int selectedIndex) {
 void APComp::processBlock (juce::AudioBuffer<float>& buffer, juce::MidiBuffer& midiMessages) {
     
     juce::ScopedNoDenormals noDenormals;
+    
+    int overSamplingSelection = parameters.getRawParameterValue("oversampling")->load();
+
+    if (cachedOversamplingIndex != overSamplingSelection) {
+
+        cachedOversamplingIndex = overSamplingSelection;
+        
+        setOversampling(overSamplingSelection);
+        
+        return;
+    }
     
     totalNumInputChannels = getTotalNumInputChannels();
     totalNumOutputChannels = getTotalNumOutputChannels();

@@ -138,14 +138,7 @@ void GUI::buttonClicked(juce::Button* button) {
 }
 
 
-void GUI::comboBoxChanged(juce::ComboBox* comboBox) {
-    
-    if (comboBox == &oversamplingBox) {
-
-        int index = oversamplingBox.getSelectedItemIndex();
-        audioProcessor.setOversampling(index);
-    }
-}
+void GUI::comboBoxChanged(juce::ComboBox* comboBox) {}
 
 
 void GUI::paint (juce::Graphics& g) {

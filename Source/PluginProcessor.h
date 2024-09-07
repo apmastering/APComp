@@ -50,16 +50,17 @@ private:
     std::shared_ptr<juce::dsp::Oversampling<float>> managedOversampler;
     std::shared_ptr<juce::dsp::Oversampling<float>> getCurrentOversampler() const { return managedOversampler; }
 
-    double outputSample[2] = {0};
-    double slewedSignal[2] = {-200.0};
-    double previousGainReduction[2] = {-200.0};
-    double gainReduction[2] = {0};
-    float meterDecayCoefficient = 0.99f;
-    int totalNumInputChannels = 0;
-    int totalNumOutputChannels = 0;
-    float inertiaVelocity[2] = {0};
-    size_t currentSamplesPerBlock = 0;
-    int currentSampleRate = 0;
+    double outputSample[2];
+    double slewedSignal[2];
+    double previousGainReduction[2];
+    double gainReduction[2];
+    float meterDecayCoefficient;
+    int totalNumInputChannels;
+    int totalNumOutputChannels;
+    float inertiaVelocity[2];
+    size_t currentSamplesPerBlock;
+    int currentSampleRate;
+    int cachedOversamplingIndex;
     
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (APComp)
 };

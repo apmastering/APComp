@@ -24,7 +24,7 @@ public:
     void sliderValueChanged(juce::Slider* slider) override;
     void buttonClicked(juce::Button* button) override;
     void comboBoxChanged(juce::ComboBox* comboBox) override;
-    
+
     bool metersActive = true;
 
 private:
