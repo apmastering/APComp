@@ -18,21 +18,19 @@ private:
 };
 
 
-class GUI  : public juce::AudioProcessorEditor, private juce::Timer {
+class GUI  : public juce::AudioProcessorEditor, public juce::Slider::Listener, private juce::Timer {
     
 public:
     
     GUI (APComp&);
     ~GUI() override;
-        
+    
     void paint (juce::Graphics&) override;
     void resized() override;
     void timerCallback() override;
-    ButtonName determineButton(const juce::MouseEvent &event);
-    
     void mouseDown (const juce::MouseEvent& event) override;
-
-    
+    void sliderValueChanged(juce::Slider* slider) override;
+        
 private:
     
     APComp& audioProcessor;
@@ -53,30 +51,30 @@ private:
     juce::Slider channelLinkSlider;
     juce::Slider sidechainSlider;
     juce::Slider variMuSlider;
-    juce::Slider slowSlider;
+    juce::Slider foldSlider;
     juce::Slider feedbackSlider;
     juce::Slider inertiaSlider;
     juce::Slider inertiaDecaySlider;
     juce::Slider overdriveSlider;
     juce::Slider oversamplingSlider;
             
-    std::vector<std::reference_wrapper<juce::Slider>> sliders {
-        std::ref(inGainSlider),
-        std::ref(outGainSlider),
-        std::ref(convexitySlider),
-        std::ref(attackSlider),
-        std::ref(releaseSlider),
-        std::ref(thresholdSlider),
-        std::ref(ratioSlider),
-        std::ref(channelLinkSlider),
-        std::ref(sidechainSlider),
-        std::ref(variMuSlider),
-        std::ref(slowSlider),
-        std::ref(feedbackSlider),
-        std::ref(inertiaSlider),
-        std::ref(inertiaDecaySlider),
-        std::ref(overdriveSlider),
-        std::ref(oversamplingSlider)
+    std::vector<std::pair<std::string, std::reference_wrapper<juce::Slider>>> sliders {
+        {"inGainSlider",        std::ref(inGainSlider)},
+        {"outGainSlider",       std::ref(outGainSlider)},
+        {"convexitySlider",     std::ref(convexitySlider)},
+        {"attackSlider",        std::ref(attackSlider)},
+        {"releaseSlider",       std::ref(releaseSlider)},
+        {"thresholdSlider",     std::ref(thresholdSlider)},
+        {"ratioSlider",         std::ref(ratioSlider)},
+        {"channelLinkSlider",   std::ref(channelLinkSlider)},
+        {"sidechainSlider",     std::ref(sidechainSlider)},
+        {"variMuSlider",        std::ref(variMuSlider)},
+        {"foldSlider",          std::ref(foldSlider)},
+        {"feedbackSlider",      std::ref(feedbackSlider)},
+        {"inertiaSlider",       std::ref(inertiaSlider)},
+        {"inertiaDecaySlider",  std::ref(inertiaDecaySlider)},
+        {"overdriveSlider",     std::ref(overdriveSlider)},
+        {"oversamplingSlider",  std::ref(oversamplingSlider)}
     };
 
     std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> inGainAttachment;
@@ -89,7 +87,7 @@ private:
     std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> channelLinkAttachment;
     std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> sidechainAttachment;
     std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> variMuAttachment;
-    std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> slowAttachment;
+    std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> foldAttachment;
     std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> feedbackAttachment;
     std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> inertiaAttachment;
     std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> inertiaDecayAttachment;
@@ -97,6 +95,7 @@ private:
     std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> oversamplingAttachment;
         
     bool metersActive;
+    TextScreen textScreen;
 
     const float metersLeft    = 619.3f;
     const float metersRight   = 662.0f;
@@ -112,14 +111,32 @@ private:
     const int knobColumn3 = 370;
     const int knobColumn4 = 519;
     
+    const int presetRow1 = 0;
+    const int presetRow2 = 0;
+    
+    const int presetColumn1 = 0;
+    const int presetColumn2 = 0;
+    const int presetColumn3 = 0;
+    const int presetColumn4 = 0;
+    const int presetColumn5 = 0;
+    
+    const int textScreenL = 168;
+    const int textScreenR = 418;
+    const int textScreenT = 382;
+    const int textScreenB = 492;
+    
     void toggleMeters();
-    void toggleSlow();
     void toggleVariMu();
     void switchOversampling(bool active);
     void switchSidechain(bool active);
     void paintMeters(juce::Graphics &g);
     void paintButtons(juce::Graphics &g);
     void paintBackground(juce::Graphics &g);
+    void paintTextScreen(juce::Graphics &g, std::string &textScreenString);
+    std::string updateTextScreen();
+    ButtonName determineButton(const juce::MouseEvent &event);
+    
+    std::mutex textScreenMutex;
     
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (GUI)
 };

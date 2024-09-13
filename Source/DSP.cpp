@@ -61,6 +61,7 @@ void APComp::doCompressionDSP(juce::dsp::AudioBlock<float>& mainBlock,
     const float feedbackValue           = getKnobValueFromCache(static_cast<int>(ParameterNames::feedback));
     const float inertiaCoefficientValue = getKnobValueFromCache(static_cast<int>(ParameterNames::inertia));
     const float overdriveThreshold      = getBoolValueFromCache(static_cast<int>(ParameterNames::overdrive));
+    const float foldback                = getBoolValueFromCache(static_cast<int>(ParameterNames::fold));
           float inertiaDecayCoefficient = getKnobValueFromCache(static_cast<int>(ParameterNames::inertiaDecay));
           bool  sidechainSelected       = getBoolValueFromCache(static_cast<int>(ParameterNames::sidechain));
     
@@ -167,7 +168,10 @@ void APComp::doCompressionDSP(juce::dsp::AudioBlock<float>& mainBlock,
             if (std::isnan(outputSample[channel])) {
                 outputSample[channel] = 0.0f;
             }
-                            
+            
+#if PRO_VERSION
+            doProOverdrive(outputSample[channel], overdriveThreshold, foldback);
+#else
             if (std::fabs(outputSample[channel]) > 0.0) {
                 
                 float sign = outputSample[channel] < 0 ? -1.0f : 1.0f;
@@ -176,7 +180,8 @@ void APComp::doCompressionDSP(juce::dsp::AudioBlock<float>& mainBlock,
                 
                 outputSample[channel] = sign * (overdriveThreshold + compressedExcess);
             }
-            
+#endif
+                            
             channelData[channel][sample] = outputSample[channel];
             
             if (std::abs(inputSample[channel]) > maxValuesForMeters[channel]) maxValuesForMeters[channel] = std::abs(inputSample[channel]);

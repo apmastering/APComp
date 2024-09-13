@@ -1,16 +1,25 @@
 #include <algorithm>
+#include <mutex>
 
 #include "APCommon.h"
 #include "PluginProcessor.h"
 #include "PluginEditor.h"
 #include "Constants.h"
 
+#if PRO_VERSION
+    #include "ProButtons.h"
+#endif
+
 
 GUI::GUI (APComp& p)
 : AudioProcessorEditor (&p),
 audioProcessor (p),
 knobLook1(),
+#if PRO_VERSION
+backgroundImage (juce::ImageFileFormat::loadFrom(BinaryData::bgPro_png, BinaryData::bgPro_pngSize)),
+#else
 backgroundImage (juce::ImageFileFormat::loadFrom(BinaryData::bg_png, BinaryData::bg_pngSize)),
+#endif
 customTypeface (APFont::getFont()),
 inGainSlider(),
 outGainSlider(),
@@ -22,7 +31,7 @@ ratioSlider(),
 channelLinkSlider(),
 sidechainSlider(),
 variMuSlider(),
-slowSlider(),
+foldSlider(),
 feedbackSlider(),
 inertiaSlider(),
 inertiaDecaySlider(),
@@ -37,7 +46,7 @@ ratioAttachment (std::make_unique<juce::AudioProcessorValueTreeState::SliderAtta
 channelLinkAttachment (std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(audioProcessor.apvts, "channelLink", channelLinkSlider)),
 sidechainAttachment (std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(audioProcessor.apvts, "sidechain", sidechainSlider)),
 variMuAttachment (std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(audioProcessor.apvts, "variMu", variMuSlider)),
-slowAttachment (std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(audioProcessor.apvts, "slow", slowSlider)),
+foldAttachment (std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(audioProcessor.apvts, "fold", foldSlider)),
 feedbackAttachment (std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(audioProcessor.apvts, "feedback", feedbackSlider)),
 inertiaAttachment (std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(audioProcessor.apvts, "inertia", inertiaSlider)),
 inertiaDecayAttachment (std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(audioProcessor.apvts, "inertiaDecay", inertiaDecaySlider)),
@@ -46,16 +55,21 @@ oversamplingAttachment (std::make_unique<juce::AudioProcessorValueTreeState::Sli
 metersActive(true) {
           
     for (size_t i = 0; i < sliders.size(); ++i) {
-        juce::Slider& slider = sliders[i].get();
+        
+        juce::Slider& slider = sliders[i].second.get();
+        const std::string& sliderName = sliders[i].first;
+
         slider.setSliderStyle(juce::Slider::RotaryVerticalDrag);
         slider.setTextBoxStyle(juce::Slider::NoTextBox, false, 0, 0);
+        slider.setName(sliderName);
+        slider.addListener(this);
         addAndMakeVisible(slider);
     }
     
     oversamplingSlider.setVisible(false);
     sidechainSlider.setVisible(false);
     variMuSlider.setVisible(false);
-    slowSlider.setVisible(false);
+    foldSlider.setVisible(false);
             
     inGainSlider.setLookAndFeel(&knobLook1);
     outGainSlider.setLookAndFeel(&knobLook1);
@@ -70,10 +84,13 @@ metersActive(true) {
     inertiaDecaySlider.setLookAndFeel(&knobLook1);
     overdriveSlider.setLookAndFeel(&knobLook1);
 
+#if PRO_VERSION
+    setSize (680, 640);
+#else
     setSize (680, 450);
-    
+#endif
+
     const int refreshRate = 33;
-    
     startTimer(refreshRate);
 }
 
@@ -190,6 +207,44 @@ void GUI::paintButtons(juce::Graphics &g) {
 }
 
 
+void GUI::paintTextScreen(juce::Graphics &g, std::string &textScreenString) {
+    
+    g.drawFittedText(textScreenString,
+                     textScreenL,
+                     textScreenT,
+                     textScreenR - textScreenL,
+                     textScreenB - textScreenT, 
+                     juce::Justification::centredTop,
+                     1);
+}
+
+
+std::string GUI::updateTextScreen() {
+    
+    std::lock_guard<std::mutex> lock(textScreenMutex);
+
+    if (textScreen.timeout > 0) textScreen.timeout--;
+    
+    if (textScreen.timeout < 1) textScreen.displayDefaultText = true;
+    else textScreen.displayDefaultText = false;
+    
+    if (textScreen.displayDefaultText) return textScreen.defaultText;
+    
+    std::string textScreenString;
+    
+    if (textScreen.isBool)
+        textScreenString = textScreen.parameterName +
+        ": " +
+        (textScreen.value > 0.5f ? "ON" : "OFF");
+    else
+        textScreenString = textScreen.parameterName +
+        ": " +
+        floatToStringWithTwoDecimalPlaces(textScreen.value) +
+        textScreen.suffix;
+    return textScreenString;
+}
+
+
 void GUI::paint (juce::Graphics& g) {
     
     paintBackground(g);
@@ -197,6 +252,10 @@ void GUI::paint (juce::Graphics& g) {
     paintMeters(g);
     
     paintButtons(g);
+    
+    std::string textScreenString = updateTextScreen();
+    
+    paintTextScreen(g, textScreenString);
 }
 
 
@@ -281,14 +340,6 @@ ButtonName GUI::determineButton(const juce::MouseEvent &event) {
         return ButtonName::variMu;
     }
     
-    if (event.x > knobColumn3 - buttonRadius &&
-        event.x < knobColumn3 + buttonRadius &&
-        event.y > knobRow3 - buttonRadius &&
-        event.y < knobRow3 + buttonRadius) {
-        
-        return ButtonName::slow;
-    }
-    
     if (event.x > metersLeft &&
         event.x < metersRight &&
         event.y > metersTop &&
@@ -320,8 +371,9 @@ void GUI::mouseDown (const juce::MouseEvent& event) {
         case ButtonName::oversamplingOFF:   { switchOversampling(false);  return; }
         case ButtonName::sidechainInternal: { switchSidechain(false);     return; }
         case ButtonName::sidechainExternal: { switchSidechain(true);      return; }
+#if PRO_VERSION
         case ButtonName::variMu:            { toggleVariMu();             return; }
-        case ButtonName::slow:              { toggleSlow();               return; }
+#endif
         default: return;
     }
 }
@@ -339,15 +391,6 @@ void GUI::toggleVariMu() {
     
     if (currentValue) variMuSlider.setValue(false);
     else variMuSlider.setValue(true);
-}
-
-
-void GUI::toggleSlow() {
-    
-    bool currentValue = audioProcessor.getButtonKnobValue(ParameterNames::slow);
-    
-    if (currentValue) slowSlider.setValue(false);
-    else slowSlider.setValue(true);
 }
 
 
@@ -379,8 +422,8 @@ void KnobLook1::drawRotarySlider(juce::Graphics& g,
                                          float sliderPosProportional,
                                          float rotaryStartAngle,
                                          float rotaryEndAngle,
-                                         juce::Slider& slider) {
-
+                                 juce::Slider& slider) {
+    
     const float radius = width / 2;
     
     x += radius;
@@ -391,7 +434,7 @@ void KnobLook1::drawRotarySlider(juce::Graphics& g,
     const float rx = x - radius;
     const float ry = y - radius;
     const float angle = rotaryStartAngle + sliderPosProportional * (rotaryEndAngle - rotaryStartAngle);
-        
+    
     if (knobImage.isValid()) {
         
         g.saveState();
@@ -399,4 +442,32 @@ void KnobLook1::drawRotarySlider(juce::Graphics& g,
         g.drawImageTransformed(knobImage, juce::AffineTransform::translation(rx, ry), false);
         g.restoreState();
     }
+}
+
+
+void GUI::sliderValueChanged(juce::Slider* slider) {
+    
+    std::lock_guard<std::mutex> lock(textScreenMutex);
+    
+    textScreen.parameterName = slider->getName().toStdString();
+    textScreen.value = slider->getValue();
+    
+    textScreen.isBool = false;
+    textScreen.suffix = "";
+    
+    if (textScreen.parameterName == "oversamplingSlider") textScreen.isBool = true;
+    if (textScreen.parameterName == "variMuSlider") textScreen.isBool = true;
+    if (textScreen.parameterName == "sidechainSlider") textScreen.isBool = true;
+    
+    if (textScreen.parameterName == "inGainSlider")     textScreen.suffix = "db";
+    if (textScreen.parameterName == "outGainSlider")    textScreen.suffix = "db";
+    if (textScreen.parameterName == "attackSlider")     textScreen.suffix = "ms";
+    if (textScreen.parameterName == "releaseSlider")    textScreen.suffix = "ms";
+    if (textScreen.parameterName == "thresholdSlider")  textScreen.suffix = "db";
+    if (textScreen.parameterName == "ratioSlider")      textScreen.suffix = ":1";
+    if (textScreen.parameterName == "channelLinkSlider")textScreen.suffix = "%";
+    if (textScreen.parameterName == "foldSlider")       textScreen.suffix = "%";
+    if (textScreen.parameterName == "feedbackSlider")   textScreen.suffix = "%";
+    
+    textScreen.timeout = textScreen.defaultTimeout;
 }

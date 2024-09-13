@@ -7,6 +7,10 @@
               pluginManufacturerCode="APMG" pluginCode="VSTC">
   <MAINGROUP id="Hvoxjg" name="Versatile Compressor">
     <GROUP id="{75A4BD03-6758-0836-43A9-891F6FB902AD}" name="Source">
+      <FILE id="W9IYBr" name="bgPro.png" compile="0" resource="1" file="../APCompPro/bgPro.png"/>
+      <FILE id="ThYxzd" name="ProDSP.cpp" compile="1" resource="0" file="../APCompPro/ProDSP.cpp"/>
+      <FILE id="ET7pDD" name="ProDSP.h" compile="0" resource="0" file="../APCompPro/ProDSP.h"/>
+      <FILE id="P0GAdj" name="ProButtons.h" compile="0" resource="0" file="../APCompPro/ProButtons.h"/>
       <FILE id="UtdelC" name="knob.png" compile="0" resource="1" file="Source/media/knob.png"/>
       <FILE id="pBe1Dp" name="bg.png" compile="0" resource="1" file="Source/media/bg.png"/>
       <FILE id="VbexeQ" name="Constants.h" compile="0" resource="0" file="Source/Constants.h"/>
@@ -49,6 +53,9 @@
       <CONFIGURATIONS>
         <CONFIGURATION isDebug="1" name="Debug" targetName="Versatile Compressor"/>
         <CONFIGURATION isDebug="0" name="Release" targetName="Versatile Compressor"
+                       stripLocalSymbols="1"/>
+        <CONFIGURATION isDebug="1" name="Debug Pro" targetName="Versatile Compressor Pro"/>
+        <CONFIGURATION isDebug="0" name="Release Pro" targetName="Versatile Compressor Pro"
                        stripLocalSymbols="1"/>
       </CONFIGURATIONS>
       <MODULEPATHS>

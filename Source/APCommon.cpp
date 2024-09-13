@@ -34,6 +34,13 @@ double decibelsToGain(double decibels) {
 }
 
 
+std::string floatToStringWithTwoDecimalPlaces(float value) {
+    std::stringstream stream;
+    stream << std::fixed << std::setprecision(2) << value;
+    return stream.str();
+}
+
+
 std::string getParameterNameFromEnum(ParameterNames index) {
     switch (index) {
         case ParameterNames::inGain:        return "inGain";
@@ -51,7 +58,7 @@ std::string getParameterNameFromEnum(ParameterNames index) {
         case ParameterNames::sidechain:     return "sidechain";
         case ParameterNames::metersOn:      return "metersOn";
         case ParameterNames::oversampling:  return "oversampling";
-        case ParameterNames::slow:          return "slow";
+        case ParameterNames::fold:          return "fold";
         case ParameterNames::variMu:        return "variMu";
         default: throw std::out_of_range("Invalid index for getParameterNameFromEnum");
     }
@@ -76,7 +83,7 @@ ParameterNames getParameterEnumFromParameterName(const std::string& name) {
         {"metersOn",      ParameterNames::metersOn},
         {"oversampling",  ParameterNames::oversampling},
         {"variMu",        ParameterNames::variMu},
-        {"slow",          ParameterNames::slow}
+        {"fold",          ParameterNames::fold}
     };
 
     auto it = nameToEnumMap.find(name);

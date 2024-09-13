@@ -3,6 +3,10 @@
 #include "APCommon.h"
 #include "PluginProcessor.h"
 
+#if PRO_VERSION
+    #include "ProDSP.h"
+#endif
+
 
 APComp::APComp()
 : AudioProcessor(BusesProperties()

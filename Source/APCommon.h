@@ -4,6 +4,8 @@
 #include <string>
 #include <JuceHeader.h>
 
+#define PRO_VERSION 0
+
 
 enum class OversamplingOption {
     None   = 0,
@@ -22,8 +24,33 @@ enum class ButtonName {
     logo,
     meters,
     variMu,
-    slow,
     none
+};
+
+
+struct TextScreen {
+    bool isBool;
+    float value;
+    bool displayDefaultText;
+    int timeout;
+    int defaultTimeout;
+    std::string parameterName;
+    std::string suffix;
+    std::string defaultText;
+    
+    TextScreen()
+    : isBool(false),
+    value(0.0f),
+    displayDefaultText(true),
+    timeout(0),
+    defaultTimeout(100),
+    parameterName(""),
+    suffix(""),
+#if PRO_VERSION
+    defaultText("Versatile Compressor Pro") {}
+#else
+    defaultText("Versatile Compressor") {}
+#endif
 };
 
 
@@ -44,7 +71,7 @@ enum class ParameterNames {
     oversampling    = 13,
     overdrive       = 14,
     variMu          = 15,
-    slow            = 16,
+    fold            = 16,
     END             = 17
 };
 
@@ -52,6 +79,7 @@ enum class ParameterNames {
 double linearToExponential(double linearValue, double minValue, double maxValue);
 double gainToDecibels(double gain);
 double decibelsToGain(double decibels);
+std::string floatToStringWithTwoDecimalPlaces(float value);
 std::string getParameterNameFromEnum(ParameterNames index);
 ParameterNames getParameterEnumFromParameterName(const std::string& name);
 
