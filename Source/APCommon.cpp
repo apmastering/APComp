@@ -34,27 +34,6 @@ double decibelsToGain(double decibels) {
 }
 
 
-const std::map<OversamplingOption, std::string> oversamplingOptionToString = {
-    { OversamplingOption::None,   "None" },
-    { OversamplingOption::FIR_1x, "1x FIR" },
-    { OversamplingOption::IIR_1x, "1x IIR" },
-    { OversamplingOption::FIR_2x, "2x FIR" },
-    { OversamplingOption::IIR_2x, "2x IIR" }
-};
-
-
-OversamplingOption getOversamplingOptionFromIndex(int index) {
-    switch (index) {
-        case 0: return OversamplingOption::None;
-        case 1: return OversamplingOption::FIR_1x;
-        case 2: return OversamplingOption::IIR_1x;
-        case 3: return OversamplingOption::FIR_2x;
-        case 4: return OversamplingOption::IIR_2x;
-        default: throw std::out_of_range("Invalid index for OversamplingOption");
-    }
-}
-
-
 std::string getParameterNameFromEnum(ParameterNames index) {
     switch (index) {
         case ParameterNames::inGain:        return "inGain";
@@ -68,9 +47,12 @@ std::string getParameterNameFromEnum(ParameterNames index) {
         case ParameterNames::feedback:      return "feedback";
         case ParameterNames::inertia:       return "inertia";
         case ParameterNames::inertiaDecay:  return "inertiaDecay";
+        case ParameterNames::overdrive:     return "overdrive";
         case ParameterNames::sidechain:     return "sidechain";
         case ParameterNames::metersOn:      return "metersOn";
         case ParameterNames::oversampling:  return "oversampling";
+        case ParameterNames::slow:          return "slow";
+        case ParameterNames::variMu:        return "variMu";
         default: throw std::out_of_range("Invalid index for getParameterNameFromEnum");
     }
 }
@@ -89,9 +71,12 @@ ParameterNames getParameterEnumFromParameterName(const std::string& name) {
         {"feedback",      ParameterNames::feedback},
         {"inertia",       ParameterNames::inertia},
         {"inertiaDecay",  ParameterNames::inertiaDecay},
+        {"overdrive",     ParameterNames::overdrive},
         {"sidechain",     ParameterNames::sidechain},
         {"metersOn",      ParameterNames::metersOn},
-        {"oversampling",  ParameterNames::oversampling}
+        {"oversampling",  ParameterNames::oversampling},
+        {"variMu",        ParameterNames::variMu},
+        {"slow",          ParameterNames::slow}
     };
 
     auto it = nameToEnumMap.find(name);
@@ -100,16 +85,4 @@ ParameterNames getParameterEnumFromParameterName(const std::string& name) {
     } else {
         throw std::invalid_argument("Invalid parameter name for getEnumFromParameterName");
     }
-}
-
-
-std::string getOversamplingOptionString(OversamplingOption option) {
-    
-    auto it = oversamplingOptionToString.find(option);
-    
-    if (it != oversamplingOptionToString.end()) {
-        return it->second;
-    } 
-    
-    return "";
 }

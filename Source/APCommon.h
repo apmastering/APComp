@@ -13,6 +13,20 @@ enum class OversamplingOption {
     IIR_2x = 4
 };
 
+
+enum class ButtonName {
+    oversamplingON,
+    oversamplingOFF,
+    sidechainInternal,
+    sidechainExternal,
+    logo,
+    meters,
+    variMu,
+    slow,
+    none
+};
+
+
 enum class ParameterNames {
     inGain          = 0,
     outGain         = 1,
@@ -28,17 +42,19 @@ enum class ParameterNames {
     sidechain       = 11,
     metersOn        = 12,
     oversampling    = 13,
-    END             = 14
+    overdrive       = 14,
+    variMu          = 15,
+    slow            = 16,
+    END             = 17
 };
 
 
 double linearToExponential(double linearValue, double minValue, double maxValue);
 double gainToDecibels(double gain);
 double decibelsToGain(double decibels);
-std::string getOversamplingOptionString(OversamplingOption option);
-OversamplingOption getOversamplingOptionFromIndex(int index);
 std::string getParameterNameFromEnum(ParameterNames index);
 ParameterNames getParameterEnumFromParameterName(const std::string& name);
+
 
 class APFont {
 public:
@@ -54,9 +70,9 @@ private:
         auto typeface = juce::Typeface::createSystemTypefaceFor(
             BinaryData::KnockoutFlyweight_otf, BinaryData::KnockoutFlyweight_otfSize);
 
-        if (typeface != nullptr)
-        {
-            return juce::Font(juce::FontOptions().withTypeface(typeface));
+        if (typeface != nullptr) {
+            
+            return juce::Font(juce::FontOptions(typeface));
         }
         
         return juce::Font(juce::FontOptions(14.0f));

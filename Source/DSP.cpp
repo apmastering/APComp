@@ -8,12 +8,47 @@
 #include "Constants.h"
 
 
-void APComp::doCompressionDSP(juce::dsp::AudioBlock<float>& block) {
+void APComp::updateMeters(float *maxValuesForMeters) {
     
-   const float attackValue  = linearToExponential(getKnobValueFromCache(static_cast<int>(ParameterNames::attack)),
+    for (int i = 0; i < meterCount; i++) {
+        
+        if (maxValuesForMeters[i] > 100) maxValuesForMeters[i] = 100;
+        
+        if (maxValuesForMeters[i] > meterValues[i]) {
+            meterValues[i] = maxValuesForMeters[i];
+        } else {
+            meterValues[i] = meterValues[i] * meterDecayCoefficient;
+        }
+        
+        meterValuesAtomic[i].store(meterValues[i], std::memory_order_relaxed);
+    }
+}
+
+void APComp::flushLoopVariables() {
+    
+    if (flushDSP.load(std::memory_order_relaxed)) {
+        for (int channel = 0; channel < 2; channel++) {
+            slewedSignal[channel] = -200.0;
+            gainReduction[channel] = 0.0f;
+            outputSample[channel] = 0.0f;
+            previousGainReduction[channel] = -200.0;
+            inertiaVelocity[channel] = 0.0f;
+        }
+        
+        flushDSP.store(false);
+    }
+}
+
+void APComp::doCompressionDSP(juce::dsp::AudioBlock<float>& mainBlock,
+                              juce::dsp::AudioBlock<float>& sidechainBlock,
+                              size_t oversamplingFactor) {
+    
+    flushLoopVariables();
+    
+    const float attackValue  = linearToExponential(getKnobValueFromCache(static_cast<int>(ParameterNames::attack)),
                                                   Constants::attackMin,
                                                   Constants::attackMax) / 1000;
-   const float releaseValue = linearToExponential(getKnobValueFromCache(static_cast<int>(ParameterNames::release)),
+    const float releaseValue = linearToExponential(getKnobValueFromCache(static_cast<int>(ParameterNames::release)),
                                                   Constants::releaseMin,
                                                   Constants::releaseMax) / 1000;
     
@@ -25,88 +60,92 @@ void APComp::doCompressionDSP(juce::dsp::AudioBlock<float>& block) {
     const float channelLinkValue        = getKnobValueFromCache(static_cast<int>(ParameterNames::channelLink)) / 100;
     const float feedbackValue           = getKnobValueFromCache(static_cast<int>(ParameterNames::feedback));
     const float inertiaCoefficientValue = getKnobValueFromCache(static_cast<int>(ParameterNames::inertia));
+    const float overdriveThreshold      = getBoolValueFromCache(static_cast<int>(ParameterNames::overdrive));
           float inertiaDecayCoefficient = getKnobValueFromCache(static_cast<int>(ParameterNames::inertiaDecay));
           bool  sidechainSelected       = getBoolValueFromCache(static_cast<int>(ParameterNames::sidechain));
+    
+    if (ratioValue == 0) return;
 
     const double attackCoefficient = std::exp(-1.0 / (oversampledSampleRate * attackValue));
     const double releaseCoefficient = std::exp(-1.0 / (oversampledSampleRate * releaseValue));
-    
-    float* channelData[4];
-    
-    for (int i = 0; i < totalNumInputChannels && i < 4; i++) {
-        channelData[i] = block.getChannelPointer(i);
-    }
-    
-    if (totalNumInputChannels < 3) {
-        sidechainSelected = false;
-    }
-    
-    inertiaDecayCoefficient = 0.99 + (inertiaDecayCoefficient * 0.01);
 
-    float maxValuesForMeters[6] = {0};
+    float maxValuesForMeters[meterCount] = {0};
+
+    float* channelData[2];
+    float* sidechainChannelData[2];
     
-    for (int sample = 0; sample < block.getNumSamples(); ++sample)
-    {
+    for (int i = 0; i < totalNumInputChannels     && i < 2; i++) channelData[i]          = mainBlock.getChannelPointer(i);
+    for (int i = 0; i < totalNumInputChannels - 2 && i < 2; i++) sidechainChannelData[i] = sidechainBlock.getChannelPointer(i);
+        
+    inertiaDecayCoefficient = 0.99 + (inertiaDecayCoefficient * 0.01);
+    
+    for (int sample = 0; sample < mainBlock.getNumSamples(); ++sample) {
+        
         float inputSample[4];
         double inputSampledb[2];
         inputSampledb[0] = -200.0f;
         inputSampledb[1] = -200.0f;
         
-        for (int i = 0; i < 2 && i < totalNumInputChannels; i++) {
-            inputSample[i] = channelData[i][sample];
-            inputSample[i] *= decibelsToGain(inputGainValue);
-            inputSampledb[i] = gainToDecibels(std::abs(inputSample[i]) + std::abs(outputSample[i] * feedbackValue));
-            outputSample[i] = 0;
+        for (int channel = 0; channel < 2 && channel < totalNumInputChannels; channel++) {
+            inputSample[channel] = channelData[channel][sample];
+            inputSample[channel] *= decibelsToGain(inputGainValue);
+            inputSampledb[channel] = gainToDecibels(std::abs(inputSample[channel]) + std::abs(outputSample[channel] * feedbackValue));
+            outputSample[channel] = 0;
             
-            if (std::isnan(inputSampledb[i])) {
-                inputSampledb[i] = -200.0f;
-            }
+            if (std::isnan(inputSampledb[channel])) inputSampledb[channel] = -200.0f;
             
             if (sidechainSelected) {
-                inputSampledb[i] = gainToDecibels(std::abs(channelData[i + 2][sample]));
+                
+                if (totalNumInputChannels <= channel + 2) inputSampledb[channel] = -200.0f;
+                else inputSampledb[channel] = gainToDecibels(std::abs(sidechainChannelData
+                                                                      [channel]
+                                                                      [sample / static_cast<int>(std::pow(2, oversamplingFactor))]
+                                                                      ));
             }
             
-            if (inputSampledb[i] < -200) inputSampledb[i] = -200;
-            feedbackClip = false;
-            if (inputSampledb[i] > 4) {
-                inputSampledb[i] = 4;  // hardcoded 4db feedback path clip. Improve later
-                feedbackClip = true;
-            }
-            
-            if (inputSampledb[i] > slewedSignal[i])
-                slewedSignal[i] = attackCoefficient * (slewedSignal[i] - inputSampledb[i]) + inputSampledb[i];
-            else
-                slewedSignal[i] = releaseCoefficient * (slewedSignal[i] - inputSampledb[i]) + inputSampledb[i];
-            
-            if (slewedSignal[i] > thresholdValue) {
-                double targetLevel = thresholdValue + (slewedSignal[i] - thresholdValue) / ratioValue;
-                gainReduction[i] = slewedSignal[i] - targetLevel;
-                gainReduction[i] = std::pow(gainReduction[i], convexityValue);
+            if (inputSampledb[channel] < -200) inputSampledb[channel] = -200;
+
+            if (inputSampledb[channel] > 4) {
+                inputSampledb[channel] = 4.0;  // hardcoded 4db feedback path clip. Improve later
+                feedbackClip.store(true, std::memory_order_relaxed);
             } else {
-                slewedSignal[i] = thresholdValue;
-                gainReduction[i] = 0;
+                feedbackClip.store(false, std::memory_order_relaxed);
             }
             
-            slewedSignal[i] = std::clamp(slewedSignal[i], -200.0, 1000.0);
+            if (inputSampledb[channel] > slewedSignal[channel])
+                slewedSignal[channel] = attackCoefficient * (slewedSignal[channel] - inputSampledb[channel]) + inputSampledb[channel];
+            else
+                slewedSignal[channel] = releaseCoefficient * (slewedSignal[channel] - inputSampledb[channel]) + inputSampledb[channel];
             
-            double gainReductionDecimal = decibelsToGain(gainReduction[i]);
+            if (slewedSignal[channel] > thresholdValue) {
+                double targetLevel = thresholdValue + (slewedSignal[channel] - thresholdValue) / ratioValue;
+                gainReduction[channel] = slewedSignal[channel] - targetLevel;
+                gainReduction[channel] = std::pow(gainReduction[channel], convexityValue);
+            } else {
+                slewedSignal[channel] = thresholdValue;
+                gainReduction[channel] = 0;
+            }
+            
+            slewedSignal[channel] = std::clamp(slewedSignal[channel], -200.0, 1000.0);
+            
+            double gainReductionDecimal = decibelsToGain(gainReduction[channel]);
             
             if (inertiaCoefficientValue > 0) {
-                if (gainReduction[i] > previousGainReduction[i]) inertiaVelocity[i] += inertiaCoefficientValue * gainReductionDecimal * -0.001;
+                if (gainReduction[channel] > previousGainReduction[channel]) inertiaVelocity[channel] += inertiaCoefficientValue * gainReductionDecimal * -0.001;
             } else {
-                inertiaVelocity[i] += inertiaCoefficientValue * gainReductionDecimal * -0.001;
+                inertiaVelocity[channel] += inertiaCoefficientValue * gainReductionDecimal * -0.001;
             }
             
-            inertiaVelocity[i] *= inertiaDecayCoefficient;
-            if (inertiaVelocity[i] > 100) inertiaVelocity[i] = 100;
-            if (inertiaVelocity[i] < -100) inertiaVelocity[i] = -100;
+            inertiaVelocity[channel] *= inertiaDecayCoefficient;
+            if (inertiaVelocity[channel] > 100) inertiaVelocity[channel] = 100;
+            if (inertiaVelocity[channel] < -100) inertiaVelocity[channel] = -100;
             
-            gainReductionDecimal += inertiaVelocity[i];
+            gainReductionDecimal += inertiaVelocity[channel];
             if (gainReductionDecimal > 1000) gainReductionDecimal = 1000;
             if (gainReductionDecimal < -1000) gainReductionDecimal = -1000;
             
-            gainReduction[i] = gainToDecibels(gainReductionDecimal);
-            previousGainReduction[i] = gainReduction[i];
+            gainReduction[channel] = gainToDecibels(gainReductionDecimal);
+            previousGainReduction[channel] = gainReduction[channel];
         }
         
         double maxGainReduction = gainReduction[0];
@@ -114,40 +153,37 @@ void APComp::doCompressionDSP(juce::dsp::AudioBlock<float>& block) {
             maxGainReduction = gainReduction[1];
         }
         
-        for (int i = 0; i < 2 && i < totalNumInputChannels; i++) {
-            gainReduction[i] = (maxGainReduction * channelLinkValue) + (gainReduction[i] * (channelLinkValue - 1) * -1);
+        for (int channel = 0; channel < 2 && channel < totalNumInputChannels; channel++) {
+            
+            gainReduction[channel] = (maxGainReduction * channelLinkValue) + (gainReduction[channel] * (channelLinkValue - 1) * -1);
             
             if (sidechainSelected) {
-                inputSampledb[i] = gainToDecibels(std::abs(inputSample[i]));
+                inputSampledb[channel] = gainToDecibels(std::abs(inputSample[channel]));
             }
             
-            outputSample[i] = decibelsToGain(inputSampledb[i] - gainReduction[i]) * (inputSample[i] < 0 ? -1.0f : 1.0f);
-            outputSample[i] = outputSample[i] * decibelsToGain(outGainValue);
+            outputSample[channel] = decibelsToGain(inputSampledb[channel] - gainReduction[channel]) * (inputSample[channel] < 0 ? -1.0f : 1.0f);
+            outputSample[channel] = outputSample[channel] * decibelsToGain(outGainValue);
             
-            if (std::isnan(outputSample[i])) {
-                outputSample[i] = 0.0f;
+            if (std::isnan(outputSample[channel])) {
+                outputSample[channel] = 0.0f;
             }
-            
-            if (i < totalNumOutputChannels) channelData[i][sample] = outputSample[i];
-            
-            if (std::abs(inputSample[i]) > maxValuesForMeters[i]) maxValuesForMeters[i] = std::abs(inputSample[i]);
-            if (std::abs(outputSample[i]) > maxValuesForMeters[i+2]) maxValuesForMeters[i+2] = std::abs(outputSample[i]);
-            if (gainReduction[i] > maxValuesForMeters[i+4]) maxValuesForMeters[i+4] = gainReduction[i];
-        }
-    }
-    
+                            
+            if (std::fabs(outputSample[channel]) > 0.0) {
                 
-    for (int i = 0; i < 6; i++) {
-        if (maxValuesForMeters[i] > 100) maxValuesForMeters[i] = 100;
-        
-        if (maxValuesForMeters[i] > meterValuesBackPointer[i]) {
-            meterValuesBackPointer[i] = maxValuesForMeters[i];
-        } else {
-            meterValuesBackPointer[i] = meterValuesBackPointer[i] * meterDecayCoefficient;
+                float sign = outputSample[channel] < 0 ? -1.0f : 1.0f;
+                float excess = std::fabs(outputSample[channel]) - overdriveThreshold;
+                float compressedExcess = overdriveThreshold * std::tanh(0.4 * (excess / (overdriveThreshold + 0.001)));
+                
+                outputSample[channel] = sign * (overdriveThreshold + compressedExcess);
+            }
+            
+            channelData[channel][sample] = outputSample[channel];
+            
+            if (std::abs(inputSample[channel]) > maxValuesForMeters[channel]) maxValuesForMeters[channel] = std::abs(inputSample[channel]);
+            if (std::abs(outputSample[channel]) > maxValuesForMeters[channel+2]) maxValuesForMeters[channel+2] = std::abs(outputSample[channel]);
+            if (gainReduction[channel] > maxValuesForMeters[channel+4]) maxValuesForMeters[channel+4] = gainReduction[channel];
         }
     }
     
-    meterValuesBackPointer = std::exchange(meterValuesFrontPointer, meterValuesBackPointer);
-
-    std::memcpy(meterValuesBackPointer, meterValuesFrontPointer, sizeof(meterValues));
+    updateMeters(maxValuesForMeters);
 }

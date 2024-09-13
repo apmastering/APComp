@@ -1,6 +1,10 @@
 #pragma once
 
 #include <vector>
+#include <atomic>
+
+
+class BackgroundTimerThread;
 
 
 class APComp  : public juce::AudioProcessor , public juce::AudioProcessorValueTreeState::Listener {
@@ -9,6 +13,7 @@ public:
     
     APComp();
     ~APComp() override;
+        
     void prepareToPlay (double sampleRate, int samplesPerBlock) override;
     void releaseResources() override;
    #ifndef JucePlugin_PreferredChannelConfigurations
@@ -29,49 +34,93 @@ public:
     void changeProgramName (int index, const juce::String& newName) override;
     void getStateInformation (juce::MemoryBlock& destData) override;
     void setStateInformation (const void* data, int sizeInBytes) override;
-    
-    void doCompressionDSP(juce::dsp::AudioBlock<float>& block);
-    void setOversampling(int selectedIndex);
-    
-    static constexpr int meterCount = 6;
+        
+    bool getButtonKnobValue (ParameterNames parameter) const;
+    void parameterChanged(const juce::String& parameterID, float newValue) override;
+    void startOversampler(double sampleRate, int samplesPerBlock);
+    void recacheAllKnobs();
 
-    float meterValues[meterCount];
-    float meterValuesBack[meterCount];
+    static constexpr int meterCount = 6;
     
-    float* meterValuesFrontPointer;
-    float* meterValuesBackPointer;
+    std::atomic<bool> feedbackClip;
+    std::vector<std::atomic<float>> meterValuesAtomic;
+    std::atomic<bool> oversamplerReady;
     
-    bool feedbackClip;
-    int selectedOS;
+    const size_t oversamplingFactor = 1;
     int oversampledSampleRate;
-    
+
     juce::AudioProcessorValueTreeState apvts;
     juce::AudioProcessorValueTreeState::ParameterLayout createParameterLayout();
-            
+
+    std::unique_ptr<juce::dsp::Oversampling<float>> oversampler;
+
 private:
     
-    std::shared_ptr<juce::dsp::Oversampling<float>> managedOversampler;
-    std::shared_ptr<juce::dsp::Oversampling<float>> getCurrentOversampler() const { return managedOversampler; }
-
+    void updateMeters(float *maxValuesForMeters);
+    void flushLoopVariables();
+    void doCompressionDSP(juce::dsp::AudioBlock<float>& block, juce::dsp::AudioBlock<float>& sidechainBlock, size_t oversamplingFactor);
+    void initializeParameterList();
+    void addParameterListeners();
+    void removeParameterListeners();
+    float getKnobValueFromCache(int index) const;
+    bool getBoolValueFromCache(int index) const;
+    
+    float meterValues[meterCount];
     double outputSample[2];
-    double slewedSignal[2];
     double previousGainReduction[2];
     double gainReduction[2];
     float inertiaVelocity[2];
     float meterDecayCoefficient;
     int totalNumInputChannels;
     int totalNumOutputChannels;
-    int currentSampleRate;
-    int cachedOversamplingIndex;
-    size_t currentSamplesPerBlock;
-    std::vector<float> parameterCache;
+    std::vector<std::atomic<float>> parameterCache;
+    double slewedSignal[2];
     
-    void initializeParameterList();
-    void parameterChanged(const juce::String& parameterID, float newValue) override;
-    void addParameterListeners();
-    void removeParameterListeners();
-    float getKnobValueFromCache(int index) const;
-    bool getBoolValueFromCache(int index) const;
+    std::atomic<bool> flushDSP;
+    
+    juce::ThreadPool threadPool;
+    
+    //std::unique_ptr<BackgroundTimerThread> backgroundTimerThread;
     
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (APComp)
+};
+
+
+class OversamplingJob : public juce::ThreadPoolJob {
+public:
+    OversamplingJob(APComp& processor, double sampleRate, int samplesPerBlock)
+    : juce::ThreadPoolJob("OversamplingJob"),
+    processor(processor),
+    sampleRate(sampleRate),
+    samplesPerBlock(samplesPerBlock) {}
+
+    juce::ThreadPoolJob::JobStatus runJob() override {
+        
+        processor.startOversampler(sampleRate, samplesPerBlock);
+        
+        return juce::ThreadPoolJob::JobStatus::jobHasFinished;
+    }
+
+private:
+    APComp& processor;
+    double sampleRate;
+    int samplesPerBlock;
+};
+
+
+class KnobRecacheJob : public juce::ThreadPoolJob {
+public:
+    KnobRecacheJob(APComp& processor)
+    : juce::ThreadPoolJob("KnobRecacheJob"),
+    processor(processor) {}
+
+    juce::ThreadPoolJob::JobStatus runJob() override {
+        
+        processor.recacheAllKnobs();
+        
+        return juce::ThreadPoolJob::JobStatus::jobHasFinished;
+    }
+
+private:
+    APComp& processor;
 };
