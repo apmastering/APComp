@@ -1,25 +1,11 @@
 #pragma once
 
 #include "PluginProcessor.h"
-
-
-class KnobLook1 : public juce::LookAndFeel_V4 {
-    
-public:
-    
-    KnobLook1();
-    ~KnobLook1() override = default;
-    void drawRotarySlider (juce::Graphics& g, int x, int y, int width, int height, float sliderPosProportional, float rotaryStartAngle, float rotaryEndAngle, juce::Slider& slider) override;
-
-    
-private:
-    
-    juce::Image knobImage;
-};
+#include "KnobLooks.h"
 
 
 class GUI  : public juce::AudioProcessorEditor, public juce::Slider::Listener, private juce::Timer {
-    
+
 public:
     
     GUI (APComp&);
@@ -36,6 +22,7 @@ private:
     APComp& audioProcessor;
         
     KnobLook1 knobLook1;
+    KnobLook2 knobLook2;
     
     juce::Image backgroundImage;
     
@@ -55,7 +42,7 @@ private:
     juce::Slider feedbackSlider;
     juce::Slider inertiaSlider;
     juce::Slider inertiaDecaySlider;
-    juce::Slider overdriveSlider;
+    juce::Slider ceilingSlider;
     juce::Slider oversamplingSlider;
             
     std::vector<std::pair<std::string, std::reference_wrapper<juce::Slider>>> sliders {
@@ -73,7 +60,7 @@ private:
         {"feedbackSlider",      std::ref(feedbackSlider)},
         {"inertiaSlider",       std::ref(inertiaSlider)},
         {"inertiaDecaySlider",  std::ref(inertiaDecaySlider)},
-        {"overdriveSlider",     std::ref(overdriveSlider)},
+        {"ceilingSlider",       std::ref(ceilingSlider)},
         {"oversamplingSlider",  std::ref(oversamplingSlider)}
     };
 
@@ -91,7 +78,7 @@ private:
     std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> feedbackAttachment;
     std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> inertiaAttachment;
     std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> inertiaDecayAttachment;
-    std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> overdriveAttachment;
+    std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> ceilingAttachment;
     std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> oversamplingAttachment;
         
     bool metersActive;
@@ -122,8 +109,8 @@ private:
     
     const int textScreenL = 168;
     const int textScreenR = 418;
-    const int textScreenT = 382;
-    const int textScreenB = 492;
+    const int textScreenT = 380;
+    const int textScreenB = 418;
     
     void toggleMeters();
     void toggleVariMu();

@@ -7,6 +7,11 @@
               pluginManufacturerCode="APMG" pluginCode="VSTC">
   <MAINGROUP id="Hvoxjg" name="Versatile Compressor">
     <GROUP id="{75A4BD03-6758-0836-43A9-891F6FB902AD}" name="Source">
+      <FILE id="pBUw1z" name="knob2.png" compile="0" resource="1" file="Source/media/knob2.png"/>
+      <FILE id="ugDYuY" name="KnobLooks.cpp" compile="1" resource="0" file="Source/KnobLooks.cpp"/>
+      <FILE id="ApiYs5" name="KnobLooks.h" compile="0" resource="0" file="Source/KnobLooks.h"/>
+      <FILE id="H0fnPA" name="JetBrainsMono-Light.otf" compile="0" resource="1"
+            file="Source/media/JetBrainsMono-Light.otf"/>
       <FILE id="W9IYBr" name="bgPro.png" compile="0" resource="1" file="../APCompPro/bgPro.png"/>
       <FILE id="ThYxzd" name="ProDSP.cpp" compile="1" resource="0" file="../APCompPro/ProDSP.cpp"/>
       <FILE id="ET7pDD" name="ProDSP.h" compile="0" resource="0" file="../APCompPro/ProDSP.h"/>

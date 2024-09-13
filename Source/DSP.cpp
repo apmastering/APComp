@@ -63,8 +63,8 @@ void APComp::doCompressionDSP(juce::dsp::AudioBlock<float>& mainBlock,
     const float channelLinkValue        = getKnobValueFromCache(static_cast<int>(ParameterNames::channelLink)) / 100;
     const float feedbackValue           = getKnobValueFromCache(static_cast<int>(ParameterNames::feedback));
     const float inertiaCoefficientValue = getKnobValueFromCache(static_cast<int>(ParameterNames::inertia));
-    const float overdriveThreshold      = getBoolValueFromCache(static_cast<int>(ParameterNames::overdrive));
-    const float foldback                = getBoolValueFromCache(static_cast<int>(ParameterNames::fold));
+    const float ceiling                 = getKnobValueFromCache(static_cast<int>(ParameterNames::ceiling));
+    const float foldback                = getKnobValueFromCache(static_cast<int>(ParameterNames::fold));
           float inertiaDecayCoefficient = getKnobValueFromCache(static_cast<int>(ParameterNames::inertiaDecay));
           bool  sidechainSelected       = getBoolValueFromCache(static_cast<int>(ParameterNames::sidechain));
     
@@ -173,16 +173,19 @@ void APComp::doCompressionDSP(juce::dsp::AudioBlock<float>& mainBlock,
             }
             
 #if PRO_VERSION
-            doProOverdrive(outputSample[channel], overdriveThreshold, foldback);
+            doProOverdrive(outputSample[channel], ceiling, foldback);
 #else
-            if (std::fabs(outputSample[channel]) > 0.0) {
-                
+            if (std::fabs(outputSample[channel]) > ceiling) {
+
                 float sign = outputSample[channel] < 0 ? -1.0f : 1.0f;
-                float excess = std::fabs(outputSample[channel]) - overdriveThreshold;
-                float compressedExcess = overdriveThreshold * std::tanh(0.4 * (excess / (overdriveThreshold + 0.001)));
                 
-                //outputSample[channel] = sign * (overdriveThreshold + compressedExcess);
-            }
+                float excess = std::fabs(outputSample[channel]) - ceiling;
+                
+                float compressedExcess = std::tanh(excess);
+
+                outputSample[channel] = ceiling + compressedExcess;
+                outputSample[channel] *= sign;
+            };
 #endif
                             
             channelData[channel][sample] = outputSample[channel];

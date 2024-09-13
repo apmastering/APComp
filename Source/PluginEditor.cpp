@@ -15,12 +15,13 @@ GUI::GUI (APComp& p)
 : AudioProcessorEditor (&p),
 audioProcessor (p),
 knobLook1(),
+knobLook2(),
 #if PRO_VERSION
 backgroundImage (juce::ImageFileFormat::loadFrom(BinaryData::bgPro_png, BinaryData::bgPro_pngSize)),
 #else
 backgroundImage (juce::ImageFileFormat::loadFrom(BinaryData::bg_png, BinaryData::bg_pngSize)),
 #endif
-customTypeface (APFont::getFont()),
+customTypeface (APFont::getMonoFont()),
 inGainSlider(),
 outGainSlider(),
 convexitySlider(),
@@ -35,7 +36,7 @@ foldSlider(),
 feedbackSlider(),
 inertiaSlider(),
 inertiaDecaySlider(),
-overdriveSlider(),
+ceilingSlider(),
 inGainAttachment (std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(audioProcessor.apvts, "inGain", inGainSlider)),
 outGainAttachment (std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(audioProcessor.apvts, "outGain", outGainSlider)),
 convexityAttachment (std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(audioProcessor.apvts, "convexity", convexitySlider)),
@@ -50,7 +51,7 @@ foldAttachment (std::make_unique<juce::AudioProcessorValueTreeState::SliderAttac
 feedbackAttachment (std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(audioProcessor.apvts, "feedback", feedbackSlider)),
 inertiaAttachment (std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(audioProcessor.apvts, "inertia", inertiaSlider)),
 inertiaDecayAttachment (std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(audioProcessor.apvts, "inertiaDecay", inertiaDecaySlider)),
-overdriveAttachment (std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(audioProcessor.apvts, "overdrive", overdriveSlider)),
+ceilingAttachment (std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(audioProcessor.apvts, "ceiling", ceilingSlider)),
 oversamplingAttachment (std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(audioProcessor.apvts, "oversampling", oversamplingSlider)),
 metersActive(true) {
           
@@ -71,8 +72,8 @@ metersActive(true) {
     variMuSlider.setVisible(false);
     foldSlider.setVisible(false);
             
-    inGainSlider.setLookAndFeel(&knobLook1);
-    outGainSlider.setLookAndFeel(&knobLook1);
+    inGainSlider.setLookAndFeel(&knobLook2);
+    outGainSlider.setLookAndFeel(&knobLook2);
     convexitySlider.setLookAndFeel(&knobLook1);
     attackSlider.setLookAndFeel(&knobLook1);
     releaseSlider.setLookAndFeel(&knobLook1);
@@ -82,7 +83,7 @@ metersActive(true) {
     feedbackSlider.setLookAndFeel(&knobLook1);
     inertiaSlider.setLookAndFeel(&knobLook1);
     inertiaDecaySlider.setLookAndFeel(&knobLook1);
-    overdriveSlider.setLookAndFeel(&knobLook1);
+    ceilingSlider.setLookAndFeel(&knobLook1);
 
 #if PRO_VERSION
     setSize (680, 640);
@@ -110,7 +111,7 @@ GUI::~GUI() {
     feedbackSlider.setLookAndFeel(nullptr);
     inertiaSlider.setLookAndFeel(nullptr);
     inertiaDecaySlider.setLookAndFeel(nullptr);
-    overdriveSlider.setLookAndFeel(nullptr);
+    ceilingSlider.setLookAndFeel(nullptr);
 }
 
 
@@ -209,7 +210,7 @@ void GUI::paintButtons(juce::Graphics &g) {
 
 void GUI::paintTextScreen(juce::Graphics &g, std::string &textScreenString) {
         
-    customTypeface.setHeight(32.0f);
+    customTypeface.setHeight(20.0f);
     g.setFont(customTypeface);
     g.setColour (juce::Colours::white.withAlpha(0.7f));
 
@@ -219,7 +220,7 @@ void GUI::paintTextScreen(juce::Graphics &g, std::string &textScreenString) {
                      textScreenT,
                      textScreenR - textScreenL,
                      textScreenB - textScreenT, 
-                     juce::Justification::centredTop,
+                     juce::Justification::centred,
                      1);
 }
 
@@ -273,6 +274,9 @@ void GUI::resized() {
     const int IOKnobsX = 642;
     const int inputY   = 313;
     const int outputY  = 388;
+    const int IOknobWidth  = 42;
+    const int IOknobHeight = IOknobWidth;
+    const int IOradius = IOknobWidth / 2;
     
     convexitySlider.setBounds       (knobColumn1 - radius, knobRow1 - radius, knobWidth, knobHeight);
     inertiaSlider.setBounds         (knobColumn1 - radius, knobRow2 - radius, knobWidth, knobHeight);
@@ -286,10 +290,10 @@ void GUI::resized() {
     
     channelLinkSlider.setBounds     (knobColumn4 - radius, knobRow1 - radius, knobWidth, knobHeight);
     feedbackSlider.setBounds        (knobColumn4 - radius, knobRow2 - radius, knobWidth, knobHeight);
-    overdriveSlider.setBounds       (knobColumn4 - radius, knobRow3 - radius, knobWidth, knobHeight);
+    ceilingSlider.setBounds       (knobColumn4 - radius, knobRow3 - radius, knobWidth, knobHeight);
  
-    inGainSlider.setBounds          (IOKnobsX    - radius, inputY   - radius, knobWidth, knobHeight);
-    outGainSlider.setBounds         (IOKnobsX    - radius, outputY  - radius, knobWidth, knobHeight);
+    inGainSlider.setBounds          (IOKnobsX    - IOradius, inputY  - IOradius, IOknobWidth, IOknobHeight);
+    outGainSlider.setBounds         (IOKnobsX    - IOradius, outputY - IOradius, IOknobWidth, IOknobHeight);
 }
 
 
@@ -417,39 +421,6 @@ void GUI::timerCallback() {
 }
 
 
-KnobLook1::KnobLook1() {
-    
-    knobImage = juce::ImageFileFormat::loadFrom(BinaryData::knob_png, BinaryData::knob_pngSize);
-}
-
-void KnobLook1::drawRotarySlider(juce::Graphics& g,
-                                         int x, int y, int width, int height,
-                                         float sliderPosProportional,
-                                         float rotaryStartAngle,
-                                         float rotaryEndAngle,
-                                 juce::Slider& slider) {
-    
-    const float radius = width / 2;
-    
-    x += radius;
-    y += radius;
-    
-    const float centreX = x + radius;
-    const float centreY = y + radius;
-    const float rx = x - radius;
-    const float ry = y - radius;
-    const float angle = rotaryStartAngle + sliderPosProportional * (rotaryEndAngle - rotaryStartAngle);
-    
-    if (knobImage.isValid()) {
-        
-        g.saveState();
-        g.addTransform(juce::AffineTransform::rotation(angle, centreX, centreY).scaled(0.5));
-        g.drawImageTransformed(knobImage, juce::AffineTransform::translation(rx, ry), false);
-        g.restoreState();
-    }
-}
-
-
 void GUI::sliderValueChanged(juce::Slider* slider) {
     
     std::lock_guard<std::mutex> lock(textScreenMutex);
@@ -510,7 +481,7 @@ void GUI::sliderValueChanged(juce::Slider* slider) {
         return;
     }
     if (textScreen.parameterName == "channelLinkSlider"){
-        textScreen.parameterName = "Channel Link";
+        textScreen.parameterName = "Link";
         textScreen.suffix = "%";
         return;
     }
@@ -525,19 +496,24 @@ void GUI::sliderValueChanged(juce::Slider* slider) {
         textScreen.suffix = "%";
         return;
     }
-    if (textScreen.parameterName == "overdriveSlider")   {
-        textScreen.parameterName = "Overdrive Threshold";
+    if (textScreen.parameterName == "ceilingSlider")   {
+        textScreen.parameterName = "Ceiling";
         textScreen.suffix = "";
         return;
     }
     if (textScreen.parameterName == "convexitySlider")   {
         textScreen.parameterName = "Convexity";
-        if (textScreen.value < 0.9 || textScreen.value > 1.1) textScreen.suffix = " (Extreme value)";
+        if (textScreen.value < 0.9 || textScreen.value > 1.1) textScreen.suffix = " !";
         else textScreen.suffix = "";
         return;
     }
     if (textScreen.parameterName == "inertiaSlider")   {
         textScreen.parameterName = "Inertia";
+        textScreen.suffix = "";
+        return;
+    }
+    if (textScreen.parameterName == "inertiaDecaySlider")   {
+        textScreen.parameterName = "Inertia Decay";
         textScreen.suffix = "";
         return;
     }

@@ -19,7 +19,7 @@ juce::AudioProcessorValueTreeState::ParameterLayout APComp::createParameterLayou
     params.push_back (std::make_unique<juce::AudioParameterFloat> ("feedback",      "Feedback",         0.0f,   1.0f,   0.0f));
     params.push_back (std::make_unique<juce::AudioParameterFloat> ("inertia",       "Inertia",          -1.0f,  0.3f,   0.0f));
     params.push_back (std::make_unique<juce::AudioParameterFloat> ("inertiaDecay",  "Inertia Decay",    0.8f,   0.96f,  0.94f));
-    params.push_back (std::make_unique<juce::AudioParameterFloat> ("overdrive",  "Overdrive Threshold", 0.3f,   6.0f,   1.0f));
+    params.push_back (std::make_unique<juce::AudioParameterFloat> ("ceiling",       "Ceiling",          0.01f,   12.0f,   1.0f));
     params.push_back (std::make_unique<juce::AudioParameterFloat> ("fold",          "Fold",             0.0f,   1.0f,   0.0f));
     params.push_back (std::make_unique<juce::AudioParameterInt>   ("variMu",        "Vari Mu Mode",     0,      1,      0));
     params.push_back (std::make_unique<juce::AudioParameterInt>   ("sidechain",     "Sidechain Input",  0,      1,      1));

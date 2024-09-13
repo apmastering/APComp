@@ -54,7 +54,7 @@ std::string getParameterNameFromEnum(ParameterNames index) {
         case ParameterNames::feedback:      return "feedback";
         case ParameterNames::inertia:       return "inertia";
         case ParameterNames::inertiaDecay:  return "inertiaDecay";
-        case ParameterNames::overdrive:     return "overdrive";
+        case ParameterNames::ceiling:       return "ceiling";
         case ParameterNames::sidechain:     return "sidechain";
         case ParameterNames::metersOn:      return "metersOn";
         case ParameterNames::oversampling:  return "oversampling";
@@ -78,7 +78,7 @@ ParameterNames getParameterEnumFromParameterName(const std::string& name) {
         {"feedback",      ParameterNames::feedback},
         {"inertia",       ParameterNames::inertia},
         {"inertiaDecay",  ParameterNames::inertiaDecay},
-        {"overdrive",     ParameterNames::overdrive},
+        {"ceiling",       ParameterNames::ceiling},
         {"sidechain",     ParameterNames::sidechain},
         {"metersOn",      ParameterNames::metersOn},
         {"oversampling",  ParameterNames::oversampling},

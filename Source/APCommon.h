@@ -69,7 +69,7 @@ enum class ParameterNames {
     sidechain       = 11,
     metersOn        = 12,
     oversampling    = 13,
-    overdrive       = 14,
+    ceiling         = 14,
     variMu          = 15,
     fold            = 16,
     END             = 17
@@ -91,12 +91,31 @@ public:
         static juce::Font customTypeface = createFont();
         return customTypeface;
     }
+    
+    static juce::Font getMonoFont() {
+        
+        static juce::Font customTypeface = createMonoFont();
+        return customTypeface;
+    }
 
 private:
     static juce::Font createFont() {
         
         auto typeface = juce::Typeface::createSystemTypefaceFor(
             BinaryData::KnockoutFlyweight_otf, BinaryData::KnockoutFlyweight_otfSize);
+
+        if (typeface != nullptr) {
+            
+            return juce::Font(juce::FontOptions(typeface));
+        }
+        
+        return juce::Font(juce::FontOptions(14.0f));
+    }
+    
+    static juce::Font createMonoFont() {
+        
+        auto typeface = juce::Typeface::createSystemTypefaceFor(
+            BinaryData::JetBrainsMonoLight_otf, BinaryData::JetBrainsMonoLight_otfSize);
 
         if (typeface != nullptr) {
             
