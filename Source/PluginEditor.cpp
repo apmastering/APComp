@@ -212,8 +212,7 @@ void GUI::paintTextScreen(juce::Graphics &g, std::string &textScreenString) {
         
     customTypeface.setHeight(20.0f);
     g.setFont(customTypeface);
-    g.setColour (juce::Colours::white.withAlpha(0.7f));
-
+    g.setColour (juce::Colours::white.withAlpha(0.6f));
     
     g.drawFittedText(textScreenString,
                      textScreenL,

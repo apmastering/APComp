@@ -166,28 +166,21 @@ void APComp::doCompressionDSP(juce::dsp::AudioBlock<float>& mainBlock,
             }
             
             outputSample[channel] = decibelsToGain(inputSampledb[channel] - gainReduction[channel]) * (inputSample[channel] < 0 ? -1.0f : 1.0f);
-            outputSample[channel] = outputSample[channel] * decibelsToGain(outGainValue);
-            
-            if (std::isnan(outputSample[channel])) {
-                outputSample[channel] = 0.0f;
-            }
             
 #if PRO_VERSION
             doProOverdrive(outputSample[channel], ceiling, foldback);
 #else
-            if (std::fabs(outputSample[channel]) > ceiling) {
-
-                float sign = outputSample[channel] < 0 ? -1.0f : 1.0f;
-                
-                float excess = std::fabs(outputSample[channel]) - ceiling;
-                
-                float compressedExcess = std::tanh(excess);
-
-                outputSample[channel] = ceiling + compressedExcess;
-                outputSample[channel] *= sign;
-            };
+            outputSample[channel] /= ceiling;
+            outputSample[channel] = std::tanh(outputSample[channel]);
+            outputSample[channel] *= ceiling;
 #endif
-                            
+                  
+            outputSample[channel] = outputSample[channel] * decibelsToGain(outGainValue);
+
+            if (std::isnan(outputSample[channel])) {
+                outputSample[channel] = 0.0f;
+            }
+            
             channelData[channel][sample] = outputSample[channel];
             
             if (std::abs(inputSample[channel]) > maxValuesForMeters[channel]) maxValuesForMeters[channel] = std::abs(inputSample[channel]);
