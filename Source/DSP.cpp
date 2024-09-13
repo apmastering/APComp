@@ -51,12 +51,15 @@ void APComp::doCompressionDSP(juce::dsp::AudioBlock<float>& mainBlock,
     const float releaseValue = linearToExponential(getKnobValueFromCache(static_cast<int>(ParameterNames::release)),
                                                   Constants::releaseMin,
                                                   Constants::releaseMax) / 1000;
+    const float ratioValue   = linearToExponential(getKnobValueFromCache(static_cast<int>(ParameterNames::ratio)),
+                                                   Constants::ratioMin,
+                                                   Constants::ratioMax);
+
     
     const float inputGainValue          = getKnobValueFromCache(static_cast<int>(ParameterNames::inGain));
     const float outGainValue            = getKnobValueFromCache(static_cast<int>(ParameterNames::outGain));
     const float convexityValue          = getKnobValueFromCache(static_cast<int>(ParameterNames::convexity));
     const float thresholdValue          = getKnobValueFromCache(static_cast<int>(ParameterNames::threshold));
-    const float ratioValue              = getKnobValueFromCache(static_cast<int>(ParameterNames::ratio));
     const float channelLinkValue        = getKnobValueFromCache(static_cast<int>(ParameterNames::channelLink)) / 100;
     const float feedbackValue           = getKnobValueFromCache(static_cast<int>(ParameterNames::feedback));
     const float inertiaCoefficientValue = getKnobValueFromCache(static_cast<int>(ParameterNames::inertia));
@@ -178,7 +181,7 @@ void APComp::doCompressionDSP(juce::dsp::AudioBlock<float>& mainBlock,
                 float excess = std::fabs(outputSample[channel]) - overdriveThreshold;
                 float compressedExcess = overdriveThreshold * std::tanh(0.4 * (excess / (overdriveThreshold + 0.001)));
                 
-                outputSample[channel] = sign * (overdriveThreshold + compressedExcess);
+                //outputSample[channel] = sign * (overdriveThreshold + compressedExcess);
             }
 #endif
                             

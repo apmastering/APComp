@@ -89,7 +89,7 @@ metersActive(true) {
 #else
     setSize (680, 450);
 #endif
-
+    
     const int refreshRate = 33;
     startTimer(refreshRate);
 }
@@ -208,6 +208,11 @@ void GUI::paintButtons(juce::Graphics &g) {
 
 
 void GUI::paintTextScreen(juce::Graphics &g, std::string &textScreenString) {
+        
+    customTypeface.setHeight(32.0f);
+    g.setFont(customTypeface);
+    g.setColour (juce::Colours::white.withAlpha(0.7f));
+
     
     g.drawFittedText(textScreenString,
                      textScreenL,
@@ -454,20 +459,86 @@ void GUI::sliderValueChanged(juce::Slider* slider) {
     
     textScreen.isBool = false;
     textScreen.suffix = "";
-    
-    if (textScreen.parameterName == "oversamplingSlider") textScreen.isBool = true;
-    if (textScreen.parameterName == "variMuSlider") textScreen.isBool = true;
-    if (textScreen.parameterName == "sidechainSlider") textScreen.isBool = true;
-    
-    if (textScreen.parameterName == "inGainSlider")     textScreen.suffix = "db";
-    if (textScreen.parameterName == "outGainSlider")    textScreen.suffix = "db";
-    if (textScreen.parameterName == "attackSlider")     textScreen.suffix = "ms";
-    if (textScreen.parameterName == "releaseSlider")    textScreen.suffix = "ms";
-    if (textScreen.parameterName == "thresholdSlider")  textScreen.suffix = "db";
-    if (textScreen.parameterName == "ratioSlider")      textScreen.suffix = ":1";
-    if (textScreen.parameterName == "channelLinkSlider")textScreen.suffix = "%";
-    if (textScreen.parameterName == "foldSlider")       textScreen.suffix = "%";
-    if (textScreen.parameterName == "feedbackSlider")   textScreen.suffix = "%";
-    
     textScreen.timeout = textScreen.defaultTimeout;
+    
+    if (textScreen.parameterName == "oversamplingSlider") {
+        textScreen.parameterName = "Oversampling";
+        textScreen.isBool = true;
+        return;
+    }
+    if (textScreen.parameterName == "variMuSlider") {
+        textScreen.parameterName = "Vari Mu";
+        textScreen.isBool = true;
+        return;
+    }
+    if (textScreen.parameterName == "sidechainSlider") {
+        textScreen.parameterName = "Ext Side Chain";
+        textScreen.isBool = true;
+        return;
+    }
+    if (textScreen.parameterName == "inGainSlider")     {
+        textScreen.parameterName = "Input Gain";
+        textScreen.suffix = "db";
+        return;
+    }
+    if (textScreen.parameterName == "outGainSlider")    {
+        textScreen.parameterName = "Output Gain";
+        textScreen.suffix = "db";
+        return;
+    }
+    if (textScreen.parameterName == "attackSlider")     {
+        textScreen.parameterName = "Attack";
+        textScreen.suffix = "ms";
+        textScreen.value = linearToExponential(textScreen.value, Constants::attackMin, Constants::attackMax);
+        return;
+    }
+    if (textScreen.parameterName == "releaseSlider")    {
+        textScreen.parameterName = "Release";
+        textScreen.suffix = "ms";
+        textScreen.value = linearToExponential(textScreen.value, Constants::releaseMin, Constants::releaseMax);
+        return;
+    }
+    if (textScreen.parameterName == "thresholdSlider")  {
+        textScreen.parameterName = "Threshold";
+        textScreen.suffix = "db";
+        return;
+    }
+    if (textScreen.parameterName == "ratioSlider")      {
+        textScreen.parameterName = "Ratio";
+        textScreen.value = linearToExponential(textScreen.value, Constants::ratioMin, Constants::ratioMax);
+        textScreen.suffix = ":1";
+        return;
+    }
+    if (textScreen.parameterName == "channelLinkSlider"){
+        textScreen.parameterName = "Channel Link";
+        textScreen.suffix = "%";
+        return;
+    }
+    if (textScreen.parameterName == "foldSlider")       {
+        textScreen.parameterName = "Fold";
+        textScreen.suffix = "%";
+        return;
+    }
+    if (textScreen.parameterName == "feedbackSlider")   {
+        textScreen.parameterName = "Feedback";
+        textScreen.value *= 100;
+        textScreen.suffix = "%";
+        return;
+    }
+    if (textScreen.parameterName == "overdriveSlider")   {
+        textScreen.parameterName = "Overdrive Threshold";
+        textScreen.suffix = "";
+        return;
+    }
+    if (textScreen.parameterName == "convexitySlider")   {
+        textScreen.parameterName = "Convexity";
+        if (textScreen.value < 0.9 || textScreen.value > 1.1) textScreen.suffix = " (Extreme value)";
+        else textScreen.suffix = "";
+        return;
+    }
+    if (textScreen.parameterName == "inertiaSlider")   {
+        textScreen.parameterName = "Inertia";
+        textScreen.suffix = "";
+        return;
+    }
 }

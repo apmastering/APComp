@@ -6,4 +6,6 @@ namespace Constants {
     constexpr int attackMax = 200.0f;
     constexpr int releaseMin = 10.0f;
     constexpr int releaseMax = 3000.0f;
+    constexpr int ratioMin = 1.0;
+    constexpr int ratioMax = 20.0f;
 }
