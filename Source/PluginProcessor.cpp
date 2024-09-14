@@ -1,183 +1,172 @@
+#include <thread>
+#include <chrono>
+
 #include "APCommon.h"
 #include "PluginProcessor.h"
+
+#if PRO_VERSION
+    #include "ProDSP.h"
+#endif
 
 
 APComp::APComp()
 : AudioProcessor(BusesProperties()
                  .withInput("Input", juce::AudioChannelSet::quadraphonic(), true)
                  .withOutput("Output", juce::AudioChannelSet::stereo(), true)),
-meterValues {},
-meterValuesBack {},
-meterValuesFrontPointer(meterValues),
-meterValuesBackPointer(meterValuesBack),
 feedbackClip(false),
-selectedOS(-1),
+meterValuesAtomic(meterCount),
+oversamplerReady(false),
 oversampledSampleRate(0),
 apvts(*this, nullptr, "PARAMETERS", createParameterLayout()),
+cb(100),
+meterValues { 0 },
 outputSample { 0, 0 },
-slewedSignal { -200.0, -200.0 },
 previousGainReduction { -200.0, -200.0 },
 gainReduction { 0, 0 },
 inertiaVelocity { 0, 0 },
 meterDecayCoefficient(0.99f),
 totalNumInputChannels(0),
 totalNumOutputChannels(0),
-currentSampleRate(0),
-cachedOversamplingIndex(-1),
-currentSamplesPerBlock(0) {
-
-    initializeParameterList();
-    
-    addParameterListeners();
-}
-
-
-APComp::~APComp() {
-
-    removeParameterListeners();
-}
-
-
-void APComp::initializeParameterList() {
-    
-    parameterCache.resize(static_cast<int>(ParameterNames::END) + 1);
-}
-
-
-void APComp::addParameterListeners() {
-    
+slewedSignal { -200.0, -200.0 },
+baseSampleRate(0),
+flushDSP(false),
+parameterList(static_cast<int>(ParameterNames::END) + 1) {
+        
     for (int i = 0; i < static_cast<int>(ParameterNames::END); ++i) {
         
-        if (i == static_cast<int>(ParameterNames::END)) continue;
-        
-        ParameterNames param = static_cast<ParameterNames>(i);
-        std::string paramName = getParameterNameFromEnum(param);
-        
-        apvts.addParameterListener(paramName, this);
+        parameterList[i] = static_cast<juce::AudioParameterFloat*>(apvts.getParameter(queryParameter(static_cast<ParameterNames>(i)).id));
     }
 }
 
 
-void APComp::removeParameterListeners() {
+void APComp::prepareToPlay(double sampleRate, int samplesPerBlock) {
     
-    for (int i = 0; i < static_cast<int>(ParameterNames::END); ++i) {
-        
-        if (i == static_cast<int>(ParameterNames::END)) continue;
-        
-        ParameterNames param = static_cast<ParameterNames>(i);
-        std::string paramName = getParameterNameFromEnum(param);
-        
-        apvts.removeParameterListener(paramName, this);
-    }
+#if DEBUG_MODE
+    auto start = std::chrono::high_resolution_clock::now();
+#endif
+    
+    baseSampleRate.store(static_cast<int>(sampleRate), std::memory_order_relaxed);
+
+    oversamplerReady.store(false);
+    
+    startOversampler(sampleRate, samplesPerBlock);
+
+    flushDSP.store(true, std::memory_order_relaxed);
+    
+#if DEBUG_MODE
+    auto end = std::chrono::high_resolution_clock::now();
+    std::chrono::duration<double, std::milli> duration = end - start;
+    std::cout << "prepareToPlay completed in : " << duration.count() << " milliseconds" << std::endl;
+#endif
 }
 
 
-void APComp::parameterChanged(const juce::String& parameterID, float newValue) {
+bool APComp::getBoolKnobValue (ParameterNames parameter) const {
+    
+    return parameterList[static_cast<int>(parameter)]->get() > 0.5f ? true : false;
+
+}
+
+
+float APComp::getFloatKnobValue(ParameterNames parameter) const {
+    
+    return parameterList[static_cast<int>(parameter)]->get();
+}
+
+
+void APComp::startOversampler(double sampleRate, int samplesPerBlock) {
+    
+    oversampler.reset();
+    
+    oversampler = std::make_unique<juce::dsp::Oversampling<float>>(2, 1, juce::dsp::Oversampling<float>::filterHalfBandFIREquiripple);
+    
+    oversampler->initProcessing(static_cast<size_t>(samplesPerBlock));
+    oversampler->reset();
+    
+    setLatencySamples(oversampler->getLatencyInSamples());
         
-    ParameterNames paramEnum = getParameterEnumFromParameterName(parameterID.toStdString());
-    
-    int index = static_cast<int>(paramEnum);
-    
-    parameterCache[index] = newValue;
-}
-
-
-float APComp::getKnobValueFromCache(int index) const {
-    
-    return parameterCache[index];
-}
-
-
-bool APComp::getBoolValueFromCache(int index) const {
-    
-    return parameterCache[index] >= 0.5f;
-}
-
-
-void APComp::prepareToPlay (double sampleRate, int samplesPerBlock)
-{
-    for (int i = 0; i < 2; i++) {
-        slewedSignal[i] = -200.0;
-        gainReduction[i] = 0.0f;
-        outputSample[i] = 0.0f;
-        previousGainReduction[i] = -200.0;
-        inertiaVelocity[i] = 0.0f;
-    }
-        
-    currentSamplesPerBlock = samplesPerBlock;
-    currentSampleRate = sampleRate;
-}
-
-
-void APComp::setOversampling(int selectedIndex) {
-    
-    if (currentSamplesPerBlock < 4 || currentSampleRate < 100) { return; }
-
-    std::shared_ptr<juce::dsp::Oversampling<float>> newOversampler;
-    
-    OversamplingOption selectedOversampling = getOversamplingOptionFromIndex(selectedIndex);
-
-    switch (selectedOversampling) {
-        case OversamplingOption::None:
-            newOversampler = std::make_shared<juce::dsp::Oversampling<float>>(4, 0, juce::dsp::Oversampling<float>::filterHalfBandPolyphaseIIR);
-            break;
-        case OversamplingOption::FIR_1x:
-            newOversampler = std::make_shared<juce::dsp::Oversampling<float>>(4, 1, juce::dsp::Oversampling<float>::filterHalfBandFIREquiripple);
-            break;
-        case OversamplingOption::IIR_1x:
-            newOversampler = std::make_shared<juce::dsp::Oversampling<float>>(4, 1, juce::dsp::Oversampling<float>::filterHalfBandPolyphaseIIR);
-            break;
-        case OversamplingOption::FIR_2x:
-            newOversampler = std::make_shared<juce::dsp::Oversampling<float>>(4, 2, juce::dsp::Oversampling<float>::filterHalfBandFIREquiripple);
-            break;
-        case OversamplingOption::IIR_2x:
-            newOversampler = std::make_shared<juce::dsp::Oversampling<float>>(4, 2, juce::dsp::Oversampling<float>::filterHalfBandPolyphaseIIR);
-            break;
-    }
-    
-    newOversampler->initProcessing(static_cast<size_t>(currentSamplesPerBlock));
-    newOversampler->reset();
-    
-    setLatencySamples(newOversampler->getLatencyInSamples());
-    
-    managedOversampler = newOversampler;
-    
-    selectedOS = selectedIndex;
-
-    oversampledSampleRate = static_cast<int>(currentSampleRate) * static_cast<int>(newOversampler->getOversamplingFactor());
+    oversampledSampleRate = static_cast<int>(sampleRate) * static_cast<int>(oversamplingFactor);
+ 
+    oversamplerReady.store(true);
 }
 
 
 void APComp::processBlock (juce::AudioBuffer<float>& buffer, juce::MidiBuffer& midiMessages) {
     
     juce::ScopedNoDenormals noDenormals;
-
-    int overSamplingSelection = static_cast<int>(getKnobValueFromCache(static_cast<int>(ParameterNames::oversampling)));
-
-    if (cachedOversamplingIndex != overSamplingSelection) {
-
-        cachedOversamplingIndex = overSamplingSelection;
-        
-        setOversampling(overSamplingSelection);
-        
-        return;
-    }
+    
+#if DEBUG_MODE
+    startClock();
+#endif
+    
+    int sr = baseSampleRate.load(std::memory_order_relaxed);
+    if (sr < 100) return;
     
     totalNumInputChannels = getTotalNumInputChannels();
     totalNumOutputChannels = getTotalNumOutputChannels();
     
     for (auto i = totalNumInputChannels; i < totalNumOutputChannels; ++i) buffer.clear(i, 0, buffer.getNumSamples());
-    
-    if (oversampledSampleRate < 1) return;
 
-    auto oversampler = getCurrentOversampler();
+    int overSamplingSelection = static_cast<int>(getFloatKnobValue(ParameterNames::oversampling));
 
-    if (!oversampler) return;
+    juce::dsp::AudioBlock<float> originalBlock(buffer);
+    juce::dsp::AudioBlock<float> mainBlock;
+    juce::dsp::AudioBlock<float> sidechainBlock;
     
-    juce::dsp::AudioBlock<float> originalBlock (buffer);
-    juce::dsp::AudioBlock<float> oversampledBlock = oversampler->processSamplesUp (originalBlock);
-    
-    doCompressionDSP(oversampledBlock);
+    switch (totalNumInputChannels) {
 
-    oversampler->processSamplesDown (originalBlock);
+        case 1:
+            mainBlock       = originalBlock.getSingleChannelBlock(0);
+            sidechainBlock  = originalBlock.getSingleChannelBlock(0);
+            break;
+        case 2: 
+            mainBlock       = originalBlock.getSubsetChannelBlock(0, 2);
+            sidechainBlock  = originalBlock.getSubsetChannelBlock(0, 2);
+            break;
+        case 3:
+            mainBlock       = originalBlock.getSubsetChannelBlock(0, 2);
+            sidechainBlock  = originalBlock.getSingleChannelBlock(2);
+            break;
+        case 4:
+            mainBlock       = originalBlock.getSubsetChannelBlock(0, 2);
+            sidechainBlock  = originalBlock.getSubsetChannelBlock(2, 2);
+            break;
+        default:
+            return;
+    }
+    
+    if (overSamplingSelection == 0) {
+        
+        doCompressionDSP(mainBlock, sidechainBlock, 0, sr);
+        
+#if DEBUG_MODE
+        stopClock();
+#endif
+        return;
+    }
+
+    if (!oversamplerReady.load()) return;
+        
+    juce::dsp::AudioBlock<float> oversampledBlock = oversampler->processSamplesUp (mainBlock);
+    
+    doCompressionDSP(oversampledBlock, sidechainBlock, oversamplingFactor, oversampledSampleRate);
+    
+    oversampler->processSamplesDown (mainBlock);
+    
+#if DEBUG_MODE
+    stopClock();
+#endif
+}
+
+
+void APComp::startClock() {
+    
+    startTime = std::chrono::high_resolution_clock::now();
+}
+
+void APComp::stopClock() {
+    
+    auto end = std::chrono::high_resolution_clock::now();
+    std::chrono::duration<double, std::milli> duration = end - startTime;
+    cb.add(duration.count());
 }

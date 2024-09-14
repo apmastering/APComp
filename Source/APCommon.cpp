@@ -34,49 +34,39 @@ double decibelsToGain(double decibels) {
 }
 
 
-const std::map<OversamplingOption, std::string> oversamplingOptionToString = {
-    { OversamplingOption::None,   "None" },
-    { OversamplingOption::FIR_1x, "1x FIR" },
-    { OversamplingOption::IIR_1x, "1x IIR" },
-    { OversamplingOption::FIR_2x, "2x FIR" },
-    { OversamplingOption::IIR_2x, "2x IIR" }
-};
-
-
-OversamplingOption getOversamplingOptionFromIndex(int index) {
-    switch (index) {
-        case 0: return OversamplingOption::None;
-        case 1: return OversamplingOption::FIR_1x;
-        case 2: return OversamplingOption::IIR_1x;
-        case 3: return OversamplingOption::FIR_2x;
-        case 4: return OversamplingOption::IIR_2x;
-        default: throw std::out_of_range("Invalid index for OversamplingOption");
-    }
+std::string floatToStringWithTwoDecimalPlaces(float value) {
+    std::stringstream stream;
+    stream << std::fixed << std::setprecision(2) << value;
+    return stream.str();
 }
 
 
-std::string getParameterNameFromEnum(ParameterNames index) {
-    switch (index) {
-        case ParameterNames::inGain:        return "inGain";
-        case ParameterNames::outGain:       return "outGain";
-        case ParameterNames::convexity:     return "convexity";
-        case ParameterNames::attack:        return "attack";
-        case ParameterNames::release:       return "release";
-        case ParameterNames::threshold:     return "threshold";
-        case ParameterNames::ratio:         return "ratio";
-        case ParameterNames::channelLink:   return "channelLink";
-        case ParameterNames::feedback:      return "feedback";
-        case ParameterNames::inertia:       return "inertia";
-        case ParameterNames::inertiaDecay:  return "inertiaDecay";
-        case ParameterNames::sidechain:     return "sidechain";
-        case ParameterNames::metersOn:      return "metersOn";
-        case ParameterNames::oversampling:  return "oversampling";
-        default: throw std::out_of_range("Invalid index for getParameterNameFromEnum");
+ParameterQuery queryParameter(ParameterNames paramName, const std::string& parameterStringName) {
+
+    static const std::unordered_map<ParameterNames, ParameterQuery> paramNameMap = {
+        {ParameterNames::inGain,        { "inGain",       "Input Gain",   ParameterNames::inGain }},
+        {ParameterNames::outGain,       { "outGain",      "Output Gain",  ParameterNames::outGain }},
+        {ParameterNames::convexity,     { "convexity",    "Convexity",    ParameterNames::convexity }},
+        {ParameterNames::attack,        { "attack",       "Attack",       ParameterNames::attack }},
+        {ParameterNames::release,       { "release",      "Release",      ParameterNames::release }},
+        {ParameterNames::threshold,     { "threshold",    "Threshold",    ParameterNames::threshold }},
+        {ParameterNames::ratio,         { "ratio",        "Ratio",        ParameterNames::ratio }},
+        {ParameterNames::channelLink,   { "channelLink",  "Channel Link", ParameterNames::channelLink }},
+        {ParameterNames::feedback,      { "feedback",     "Feedback",     ParameterNames::feedback }},
+        {ParameterNames::inertia,       { "inertia",      "Inertia",      ParameterNames::inertia }},
+        {ParameterNames::inertiaDecay,  { "inertiaDecay", "Inertia Decay",ParameterNames::inertiaDecay }},
+        {ParameterNames::sidechain,     { "sidechain",    "Sidechain",    ParameterNames::sidechain }},
+        {ParameterNames::oversampling,  { "oversampling", "Oversampling", ParameterNames::oversampling }},
+        {ParameterNames::ceiling,       { "ceiling",      "Ceiling",      ParameterNames::ceiling }},
+        {ParameterNames::variMu,        { "variMu",       "Vari Mu",      ParameterNames::variMu }},
+        {ParameterNames::fold,          { "fold",         "Fold",         ParameterNames::fold }}
+    };
+    
+    if (paramName != ParameterNames::END) {
+        auto it = paramNameMap.find(paramName);
+        if (it != paramNameMap.end()) return it->second;
     }
-}
 
-
-ParameterNames getParameterEnumFromParameterName(const std::string& name) {
     static const std::unordered_map<std::string, ParameterNames> nameToEnumMap = {
         {"inGain",        ParameterNames::inGain},
         {"outGain",       ParameterNames::outGain},
@@ -89,27 +79,15 @@ ParameterNames getParameterEnumFromParameterName(const std::string& name) {
         {"feedback",      ParameterNames::feedback},
         {"inertia",       ParameterNames::inertia},
         {"inertiaDecay",  ParameterNames::inertiaDecay},
+        {"ceiling",       ParameterNames::ceiling},
         {"sidechain",     ParameterNames::sidechain},
-        {"metersOn",      ParameterNames::metersOn},
-        {"oversampling",  ParameterNames::oversampling}
+        {"oversampling",  ParameterNames::oversampling},
+        {"variMu",        ParameterNames::variMu},
+        {"fold",          ParameterNames::fold}
     };
-
-    auto it = nameToEnumMap.find(name);
-    if (it != nameToEnumMap.end()) {
-        return it->second;
-    } else {
-        throw std::invalid_argument("Invalid parameter name for getEnumFromParameterName");
-    }
-}
-
-
-std::string getOversamplingOptionString(OversamplingOption option) {
     
-    auto it = oversamplingOptionToString.find(option);
-    
-    if (it != oversamplingOptionToString.end()) {
-        return it->second;
-    } 
-    
-    return "";
+    auto strIt = nameToEnumMap.find(parameterStringName);
+    if (strIt != nameToEnumMap.end()) return queryParameter(strIt->second);
+
+    throw std::invalid_argument("Both enum and string queries failed for parameter for queryParameter");
 }
