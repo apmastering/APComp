@@ -5,6 +5,7 @@
 #include <JuceHeader.h>
 
 #define PRO_VERSION 0
+#define DEBUG_MODE 0
 
 
 enum class OversamplingOption {

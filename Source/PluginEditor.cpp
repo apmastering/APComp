@@ -53,7 +53,8 @@ inertiaAttachment (std::make_unique<juce::AudioProcessorValueTreeState::SliderAt
 inertiaDecayAttachment (std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(audioProcessor.apvts, "inertiaDecay", inertiaDecaySlider)),
 ceilingAttachment (std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(audioProcessor.apvts, "ceiling", ceilingSlider)),
 oversamplingAttachment (std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(audioProcessor.apvts, "oversampling", oversamplingSlider)),
-metersActive(true) {
+metersActive(true),
+debugRefreshCountDown(0) {
           
     for (size_t i = 0; i < sliders.size(); ++i) {
         
@@ -227,7 +228,19 @@ void GUI::paintTextScreen(juce::Graphics &g, std::string &textScreenString) {
 std::string GUI::updateTextScreen() {
     
     std::lock_guard<std::mutex> lock(textScreenMutex);
-
+    
+#if DEBUG_MODE
+    if (debugRefreshCountDown > 0) {
+        debugRefreshCountDown--;
+    } else {
+        debugRefreshCountDown = 12;
+        cachedDebugValue = audioProcessor.cb.average();
+    }
+    std::stringstream stream;
+    stream << std::fixed << std::setprecision(4) << cachedDebugValue << "ms";
+    return stream.str();
+#endif
+    
     if (textScreen.timeout > 0) textScreen.timeout--;
     
     if (textScreen.timeout < 1) textScreen.displayDefaultText = true;

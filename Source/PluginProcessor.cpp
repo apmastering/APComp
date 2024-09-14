@@ -18,6 +18,7 @@ meterValuesAtomic(meterCount),
 oversamplerReady(false),
 oversampledSampleRate(0),
 apvts(*this, nullptr, "PARAMETERS", createParameterLayout()),
+cb(100),
 meterValues { 0 },
 outputSample { 0, 0 },
 previousGainReduction { -200.0, -200.0 },
@@ -30,7 +31,7 @@ slewedSignal { -200.0, -200.0 },
 baseSampleRate(0),
 flushDSP(false),
 parameterList(static_cast<int>(ParameterNames::END) + 1) {
-    
+        
     for (int i = 0; i < static_cast<int>(ParameterNames::END); ++i) {
         
         parameterList[i] = static_cast<juce::AudioParameterFloat*>(apvts.getParameter(queryParameter(static_cast<ParameterNames>(i)).id));
@@ -40,7 +41,9 @@ parameterList(static_cast<int>(ParameterNames::END) + 1) {
 
 void APComp::prepareToPlay(double sampleRate, int samplesPerBlock) {
     
+#if DEBUG_MODE
     auto start = std::chrono::high_resolution_clock::now();
+#endif
     
     baseSampleRate.store(static_cast<int>(sampleRate), std::memory_order_relaxed);
 
@@ -50,21 +53,24 @@ void APComp::prepareToPlay(double sampleRate, int samplesPerBlock) {
 
     flushDSP.store(true, std::memory_order_relaxed);
     
+#if DEBUG_MODE
     auto end = std::chrono::high_resolution_clock::now();
     std::chrono::duration<double, std::milli> duration = end - start;
     std::cout << "prepareToPlay completed in : " << duration.count() << " milliseconds" << std::endl;
+#endif
 }
 
 
 bool APComp::getBoolKnobValue (ParameterNames parameter) const {
     
-    return parameterList[static_cast<int>(parameter)]->get();
+    return parameterList[static_cast<int>(parameter)]->get() > 0.5f ? true : false;
+
 }
 
 
 float APComp::getFloatKnobValue(ParameterNames parameter) const {
     
-    return parameterList[static_cast<int>(parameter)]->get() > 0.5f ? true : false;
+    return parameterList[static_cast<int>(parameter)]->get();
 }
 
 
@@ -88,6 +94,10 @@ void APComp::startOversampler(double sampleRate, int samplesPerBlock) {
 void APComp::processBlock (juce::AudioBuffer<float>& buffer, juce::MidiBuffer& midiMessages) {
     
     juce::ScopedNoDenormals noDenormals;
+    
+#if DEBUG_MODE
+    startClock();
+#endif
     
     int sr = baseSampleRate.load(std::memory_order_relaxed);
     if (sr < 100) return;
@@ -128,6 +138,10 @@ void APComp::processBlock (juce::AudioBuffer<float>& buffer, juce::MidiBuffer& m
     if (overSamplingSelection == 0) {
         
         doCompressionDSP(mainBlock, sidechainBlock, 0, sr);
+        
+#if DEBUG_MODE
+        stopClock();
+#endif
         return;
     }
 
@@ -138,4 +152,21 @@ void APComp::processBlock (juce::AudioBuffer<float>& buffer, juce::MidiBuffer& m
     doCompressionDSP(oversampledBlock, sidechainBlock, oversamplingFactor, oversampledSampleRate);
     
     oversampler->processSamplesDown (mainBlock);
+    
+#if DEBUG_MODE
+    stopClock();
+#endif
+}
+
+
+void APComp::startClock() {
+    
+    startTime = std::chrono::high_resolution_clock::now();
+}
+
+void APComp::stopClock() {
+    
+    auto end = std::chrono::high_resolution_clock::now();
+    std::chrono::duration<double, std::milli> duration = end - startTime;
+    cb.add(duration.count());
 }

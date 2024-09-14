@@ -125,5 +125,8 @@ private:
     
     std::mutex textScreenMutex;
     
+    int debugRefreshCountDown;
+    double cachedDebugValue;
+    
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (GUI)
 };

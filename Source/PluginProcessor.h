@@ -3,8 +3,7 @@
 #include <vector>
 #include <atomic>
 
-
-class BackgroundTimerThread;
+#include "CircularBuffer.h"
 
 
 class APComp  : public juce::AudioProcessor {
@@ -50,8 +49,8 @@ public:
 
     juce::AudioProcessorValueTreeState apvts;
     juce::AudioProcessorValueTreeState::ParameterLayout createParameterLayout();
-
-    std::unique_ptr<juce::dsp::Oversampling<float>> oversampler;
+    
+    CircularBuffer cb;
 
 private:
     
@@ -61,6 +60,8 @@ private:
                           juce::dsp::AudioBlock<float>& sidechainBlock,
                           size_t oversamplingFactor,
                           int sampleRate);
+    void startClock();
+    void stopClock();
     
     float meterValues[meterCount];
     double outputSample[2];
@@ -73,10 +74,13 @@ private:
     std::vector<std::atomic<float>> parameterCache;
     double slewedSignal[2];
     std::atomic<int> baseSampleRate;
-    
     std::atomic<bool> flushDSP;
     
-    std::vector<juce::AudioParameterFloat*> parameterList;
+    std::chrono::time_point<std::chrono::high_resolution_clock> startTime;
     
+    std::vector<juce::AudioParameterFloat*> parameterList;
+        
+    std::unique_ptr<juce::dsp::Oversampling<float>> oversampler;
+
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (APComp)
 };
