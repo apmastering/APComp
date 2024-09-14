@@ -196,12 +196,12 @@ void GUI::paintButtons(juce::Graphics &g) {
     const int row2          = 49;
     const int radius        = 4;
     
-    if (audioProcessor.getButtonKnobValue(ParameterNames::oversampling))
+    if (audioProcessor.getBoolKnobValue(ParameterNames::oversampling))
         g.fillEllipse(oversamplingX - radius, row1 - radius, radius * 2, radius * 2);
     else
         g.fillEllipse(oversamplingX - radius, row2 - radius, radius * 2, radius * 2);
     
-    if (audioProcessor.getButtonKnobValue(ParameterNames::sidechain))
+    if (audioProcessor.getBoolKnobValue(ParameterNames::sidechain))
         g.fillEllipse(sidechainX - radius, row2 - radius, radius * 2, radius * 2);
     else
         g.fillEllipse(sidechainX - radius, row1 - radius, radius * 2, radius * 2);
@@ -395,7 +395,7 @@ void GUI::switchSidechain(bool active) {
 
 void GUI::toggleVariMu() {
     
-    bool currentValue = audioProcessor.getButtonKnobValue(ParameterNames::variMu);
+    bool currentValue = audioProcessor.getBoolKnobValue(ParameterNames::variMu);
     
     if (currentValue) variMuSlider.setValue(false);
     else variMuSlider.setValue(true);

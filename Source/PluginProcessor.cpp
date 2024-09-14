@@ -26,115 +26,45 @@ inertiaVelocity { 0, 0 },
 meterDecayCoefficient(0.99f),
 totalNumInputChannels(0),
 totalNumOutputChannels(0),
-parameterCache(static_cast<int>(ParameterNames::END) + 1),
 slewedSignal { -200.0, -200.0 },
 baseSampleRate(0),
-flushDSP(false) {
-    
-    addParameterListeners();
-}
-
-
-APComp::~APComp() {
-
-    removeParameterListeners();
-    
-    threadPool.removeAllJobs(true, 1000);
-}
-
-
-void APComp::addParameterListeners() {
+flushDSP(false),
+parameterList(static_cast<int>(ParameterNames::END) + 1) {
     
     for (int i = 0; i < static_cast<int>(ParameterNames::END); ++i) {
         
-        if (i == static_cast<int>(ParameterNames::END)) continue;
-        
-        ParameterNames param = static_cast<ParameterNames>(i);
-        std::string paramName = queryParameter(param).id;
-        
-        apvts.addParameterListener(paramName, this);
+        parameterList[i] = static_cast<juce::AudioParameterFloat*>(apvts.getParameter(queryParameter(static_cast<ParameterNames>(i)).id));
     }
-}
-
-
-void APComp::removeParameterListeners() {
-    
-    for (int i = 0; i < static_cast<int>(ParameterNames::END); ++i) {
-        
-        if (i == static_cast<int>(ParameterNames::END)) continue;
-        
-        ParameterNames param = static_cast<ParameterNames>(i);
-        std::string paramName = queryParameter(param).id;
-        
-        apvts.removeParameterListener(paramName, this);
-    }
-}
-
-
-void APComp::parameterChanged(const juce::String& parameterID, float newValue) {
-
-    ParameterNames paramEnum = queryParameter(ParameterNames::END, parameterID.toStdString()).parameterEnum;
-    
-    int index = static_cast<int>(paramEnum);
-    
-    parameterCache[index].store(newValue, std::memory_order_relaxed);
-}
-
-
-bool APComp::getButtonKnobValue (ParameterNames parameter) const {
-    
-    int index = static_cast<int>(parameter);
-
-    return parameterCache[index].load(std::memory_order_relaxed) >= 0.5f;
-}
-
-
-float APComp::getKnobValueFromCache(int index) const {
-    
-    return parameterCache[index].load(std::memory_order_relaxed);
-}
-
-
-bool APComp::getBoolValueFromCache(int index) const {
-    
-    return parameterCache[index].load(std::memory_order_relaxed) >= 0.5f;
 }
 
 
 void APComp::prepareToPlay(double sampleRate, int samplesPerBlock) {
-               
+    
+    auto start = std::chrono::high_resolution_clock::now();
+    
     baseSampleRate.store(static_cast<int>(sampleRate), std::memory_order_relaxed);
 
     oversamplerReady.store(false);
     
-    auto oversamplingJob = new OversamplingJob(*this, sampleRate, samplesPerBlock);
-    threadPool.addJob(oversamplingJob, true);
-
-    auto knobRecacheJob = new KnobRecacheJob(*this);
-    threadPool.addJob(knobRecacheJob, true);
+    startOversampler(sampleRate, samplesPerBlock);
 
     flushDSP.store(true, std::memory_order_relaxed);
+    
+    auto end = std::chrono::high_resolution_clock::now();
+    std::chrono::duration<double, std::milli> duration = end - start;
+    std::cout << "prepareToPlay completed in : " << duration.count() << " milliseconds" << std::endl;
 }
 
 
-void APComp::recacheAllKnobs() {
+bool APComp::getBoolKnobValue (ParameterNames parameter) const {
     
-    for (int param = 0; param < static_cast<int>(ParameterNames::END); ++param) {
-        
-        std::string parameterName = queryParameter(static_cast<ParameterNames>(param)).id;
-        
-        auto* parameterPointer = apvts.getRawParameterValue(parameterName);
-        
-        float parameterValue;
-        
-        if (parameterPointer) {
-            parameterValue = parameterPointer->load();
-        } else {
-            parameterValue = 0.0f;
-        }
-        
-        parameterChanged(parameterName, parameterValue);
-    }
+    return parameterList[static_cast<int>(parameter)]->get();
+}
+
+
+float APComp::getFloatKnobValue(ParameterNames parameter) const {
+    
+    return parameterList[static_cast<int>(parameter)]->get() > 0.5f ? true : false;
 }
 
 
@@ -151,8 +81,6 @@ void APComp::startOversampler(double sampleRate, int samplesPerBlock) {
         
     oversampledSampleRate = static_cast<int>(sampleRate) * static_cast<int>(oversamplingFactor);
  
-    std::this_thread::sleep_for(std::chrono::seconds(1));
-
     oversamplerReady.store(true);
 }
 
@@ -169,7 +97,7 @@ void APComp::processBlock (juce::AudioBuffer<float>& buffer, juce::MidiBuffer& m
     
     for (auto i = totalNumInputChannels; i < totalNumOutputChannels; ++i) buffer.clear(i, 0, buffer.getNumSamples());
 
-    int overSamplingSelection = static_cast<int>(getKnobValueFromCache(static_cast<int>(ParameterNames::oversampling)));
+    int overSamplingSelection = static_cast<int>(getFloatKnobValue(ParameterNames::oversampling));
 
     juce::dsp::AudioBlock<float> originalBlock(buffer);
     juce::dsp::AudioBlock<float> mainBlock;
@@ -202,12 +130,12 @@ void APComp::processBlock (juce::AudioBuffer<float>& buffer, juce::MidiBuffer& m
         doCompressionDSP(mainBlock, sidechainBlock, 0, sr);
         return;
     }
-    
+
     if (!oversamplerReady.load()) return;
         
     juce::dsp::AudioBlock<float> oversampledBlock = oversampler->processSamplesUp (mainBlock);
     
     doCompressionDSP(oversampledBlock, sidechainBlock, oversamplingFactor, oversampledSampleRate);
     
-    oversampler->processSamplesDown (originalBlock);
+    oversampler->processSamplesDown (mainBlock);
 }

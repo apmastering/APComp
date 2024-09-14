@@ -46,29 +46,29 @@ void APComp::doCompressionDSP(juce::dsp::AudioBlock<float>& mainBlock,
     
     flushLoopVariables();
     
-    const float attackValue  = linearToExponential(getKnobValueFromCache(static_cast<int>(ParameterNames::attack)),
+    const float attackValue  = linearToExponential(getFloatKnobValue(ParameterNames::attack),
                                                   Constants::attackMin,
                                                   Constants::attackMax) / 1000;
-    const float releaseValue = linearToExponential(getKnobValueFromCache(static_cast<int>(ParameterNames::release)),
+    const float releaseValue = linearToExponential(getFloatKnobValue(ParameterNames::release),
                                                   Constants::releaseMin,
                                                   Constants::releaseMax) / 1000;
-    const float ratioValue   = linearToExponential(getKnobValueFromCache(static_cast<int>(ParameterNames::ratio)),
+    const float ratioValue   = linearToExponential(getFloatKnobValue(ParameterNames::ratio),
                                                    Constants::ratioMin,
                                                    Constants::ratioMax);
     
-    const float inputGainValue          = getKnobValueFromCache(static_cast<int>(ParameterNames::inGain));
-    const float outGainValue            = getKnobValueFromCache(static_cast<int>(ParameterNames::outGain));
-    const float convexityValue          = getKnobValueFromCache(static_cast<int>(ParameterNames::convexity));
-    const float thresholdValue          = getKnobValueFromCache(static_cast<int>(ParameterNames::threshold));
-    const float channelLinkValue        = getKnobValueFromCache(static_cast<int>(ParameterNames::channelLink)) / 100;
-    const float feedbackValue           = getKnobValueFromCache(static_cast<int>(ParameterNames::feedback));
-    const float inertiaCoefficientValue = getKnobValueFromCache(static_cast<int>(ParameterNames::inertia));
-    const float ceiling                 = getKnobValueFromCache(static_cast<int>(ParameterNames::ceiling));
+    const float inputGainValue          = getFloatKnobValue(ParameterNames::inGain);
+    const float outGainValue            = getFloatKnobValue(ParameterNames::outGain);
+    const float convexityValue          = getFloatKnobValue(ParameterNames::convexity);
+    const float thresholdValue          = getFloatKnobValue(ParameterNames::threshold);
+    const float channelLinkValue        = getFloatKnobValue(ParameterNames::channelLink) / 100;
+    const float feedbackValue           = getFloatKnobValue(ParameterNames::feedback);
+    const float inertiaCoefficientValue = getFloatKnobValue(ParameterNames::inertia);
+    const float ceiling                 = getFloatKnobValue(ParameterNames::ceiling);
 #if PRO_VERSION
-    const float foldback                = getKnobValueFromCache(static_cast<int>(ParameterNames::fold));
+    const float foldback                = getFloatKnobValue(ParameterNames::fold);
 #endif
-          float inertiaDecayCoefficient = getKnobValueFromCache(static_cast<int>(ParameterNames::inertiaDecay));
-          bool  sidechainSelected       = getBoolValueFromCache(static_cast<int>(ParameterNames::sidechain));
+          float inertiaDecayCoefficient = getFloatKnobValue(ParameterNames::inertiaDecay);
+          bool  sidechainSelected       = getBoolKnobValue(ParameterNames::sidechain);
     
     if (ratioValue == 0) return;
 
