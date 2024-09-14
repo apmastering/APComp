@@ -1,4 +1,5 @@
 #include <thread>
+#include <chrono>
 
 #include "APCommon.h"
 #include "PluginProcessor.h"
@@ -27,6 +28,7 @@ totalNumInputChannels(0),
 totalNumOutputChannels(0),
 parameterCache(static_cast<int>(ParameterNames::END) + 1),
 slewedSignal { -200.0, -200.0 },
+baseSampleRate(0),
 flushDSP(false) {
     
     addParameterListeners();
@@ -48,7 +50,7 @@ void APComp::addParameterListeners() {
         if (i == static_cast<int>(ParameterNames::END)) continue;
         
         ParameterNames param = static_cast<ParameterNames>(i);
-        std::string paramName = getParameterNameFromEnum(param);
+        std::string paramName = queryParameter(param).id;
         
         apvts.addParameterListener(paramName, this);
     }
@@ -62,7 +64,7 @@ void APComp::removeParameterListeners() {
         if (i == static_cast<int>(ParameterNames::END)) continue;
         
         ParameterNames param = static_cast<ParameterNames>(i);
-        std::string paramName = getParameterNameFromEnum(param);
+        std::string paramName = queryParameter(param).id;
         
         apvts.removeParameterListener(paramName, this);
     }
@@ -71,7 +73,7 @@ void APComp::removeParameterListeners() {
 
 void APComp::parameterChanged(const juce::String& parameterID, float newValue) {
 
-    ParameterNames paramEnum = getParameterEnumFromParameterName(parameterID.toStdString());
+    ParameterNames paramEnum = queryParameter(ParameterNames::END, parameterID.toStdString()).parameterEnum;
     
     int index = static_cast<int>(paramEnum);
     
@@ -100,7 +102,9 @@ bool APComp::getBoolValueFromCache(int index) const {
 
 
 void APComp::prepareToPlay(double sampleRate, int samplesPerBlock) {
-                
+               
+    baseSampleRate.store(static_cast<int>(sampleRate), std::memory_order_relaxed);
+
     oversamplerReady.store(false);
     
     auto oversamplingJob = new OversamplingJob(*this, sampleRate, samplesPerBlock);
@@ -117,7 +121,7 @@ void APComp::recacheAllKnobs() {
     
     for (int param = 0; param < static_cast<int>(ParameterNames::END); ++param) {
         
-        std::string parameterName = getParameterNameFromEnum(static_cast<ParameterNames>(param));
+        std::string parameterName = queryParameter(static_cast<ParameterNames>(param)).id;
         
         auto* parameterPointer = apvts.getRawParameterValue(parameterName);
         
@@ -136,6 +140,8 @@ void APComp::recacheAllKnobs() {
 
 void APComp::startOversampler(double sampleRate, int samplesPerBlock) {
     
+    oversampler.reset();
+    
     oversampler = std::make_unique<juce::dsp::Oversampling<float>>(2, 1, juce::dsp::Oversampling<float>::filterHalfBandFIREquiripple);
     
     oversampler->initProcessing(static_cast<size_t>(samplesPerBlock));
@@ -144,14 +150,19 @@ void APComp::startOversampler(double sampleRate, int samplesPerBlock) {
     setLatencySamples(oversampler->getLatencyInSamples());
         
     oversampledSampleRate = static_cast<int>(sampleRate) * static_cast<int>(oversamplingFactor);
-    
-    oversamplerReady.store(true, std::memory_order_relaxed);
+ 
+    std::this_thread::sleep_for(std::chrono::seconds(1));
+
+    oversamplerReady.store(true);
 }
 
 
 void APComp::processBlock (juce::AudioBuffer<float>& buffer, juce::MidiBuffer& midiMessages) {
     
     juce::ScopedNoDenormals noDenormals;
+    
+    int sr = baseSampleRate.load(std::memory_order_relaxed);
+    if (sr < 100) return;
     
     totalNumInputChannels = getTotalNumInputChannels();
     totalNumOutputChannels = getTotalNumOutputChannels();
@@ -188,7 +199,7 @@ void APComp::processBlock (juce::AudioBuffer<float>& buffer, juce::MidiBuffer& m
     
     if (overSamplingSelection == 0) {
         
-        doCompressionDSP(mainBlock, sidechainBlock, 0);
+        doCompressionDSP(mainBlock, sidechainBlock, 0, sr);
         return;
     }
     
@@ -196,7 +207,7 @@ void APComp::processBlock (juce::AudioBuffer<float>& buffer, juce::MidiBuffer& m
         
     juce::dsp::AudioBlock<float> oversampledBlock = oversampler->processSamplesUp (mainBlock);
     
-    doCompressionDSP(oversampledBlock, sidechainBlock, oversamplingFactor);
-
+    doCompressionDSP(oversampledBlock, sidechainBlock, oversamplingFactor, oversampledSampleRate);
+    
     oversampler->processSamplesDown (originalBlock);
 }

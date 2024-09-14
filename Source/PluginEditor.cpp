@@ -271,8 +271,8 @@ void GUI::resized() {
     const int radius     = knobWidth / 2;
     
     const int IOKnobsX = 642;
-    const int inputY   = 313;
-    const int outputY  = 388;
+    const int inputY   = 310;
+    const int outputY  = 386;
     const int IOknobWidth  = 42;
     const int IOknobHeight = IOknobWidth;
     const int IOradius = IOknobWidth / 2;
@@ -289,7 +289,7 @@ void GUI::resized() {
     
     channelLinkSlider.setBounds     (knobColumn4 - radius, knobRow1 - radius, knobWidth, knobHeight);
     feedbackSlider.setBounds        (knobColumn4 - radius, knobRow2 - radius, knobWidth, knobHeight);
-    ceilingSlider.setBounds       (knobColumn4 - radius, knobRow3 - radius, knobWidth, knobHeight);
+    ceilingSlider.setBounds         (knobColumn4 - radius, knobRow3 - radius, knobWidth, knobHeight);
  
     inGainSlider.setBounds          (IOKnobsX    - IOradius, inputY  - IOradius, IOknobWidth, IOknobHeight);
     outGainSlider.setBounds         (IOKnobsX    - IOradius, outputY - IOradius, IOknobWidth, IOknobHeight);

@@ -58,7 +58,10 @@ private:
     
     void updateMeters(float *maxValuesForMeters);
     void flushLoopVariables();
-    void doCompressionDSP(juce::dsp::AudioBlock<float>& block, juce::dsp::AudioBlock<float>& sidechainBlock, size_t oversamplingFactor);
+    void doCompressionDSP(juce::dsp::AudioBlock<float>& block,
+                          juce::dsp::AudioBlock<float>& sidechainBlock,
+                          size_t oversamplingFactor,
+                          int sampleRate);
     void initializeParameterList();
     void addParameterListeners();
     void removeParameterListeners();
@@ -75,6 +78,7 @@ private:
     int totalNumOutputChannels;
     std::vector<std::atomic<float>> parameterCache;
     double slewedSignal[2];
+    std::atomic<int> baseSampleRate;
     
     std::atomic<bool> flushDSP;
     

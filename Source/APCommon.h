@@ -28,6 +28,34 @@ enum class ButtonName {
 };
 
 
+enum class ParameterNames {
+    inGain          = 0,
+    outGain         = 1,
+    convexity       = 2,
+    attack          = 3,
+    release         = 4,
+    threshold       = 5,
+    ratio           = 6,
+    channelLink     = 7,
+    feedback        = 8,
+    inertia         = 9,
+    inertiaDecay    = 10,
+    sidechain       = 11,
+    oversampling    = 12,
+    ceiling         = 13,
+    variMu          = 14,
+    fold            = 15,
+    END             = 16
+};
+
+
+struct ParameterQuery {
+    std::string id;
+    std::string label;
+    ParameterNames parameterEnum;
+};
+
+
 struct TextScreen {
     bool isBool;
     float value;
@@ -54,35 +82,11 @@ struct TextScreen {
 };
 
 
-enum class ParameterNames {
-    inGain          = 0,
-    outGain         = 1,
-    convexity       = 2,
-    attack          = 3,
-    release         = 4,
-    threshold       = 5,
-    ratio           = 6,
-    channelLink     = 7,
-    feedback        = 8,
-    inertia         = 9,
-    inertiaDecay    = 10,
-    sidechain       = 11,
-    metersOn        = 12,
-    oversampling    = 13,
-    ceiling         = 14,
-    variMu          = 15,
-    fold            = 16,
-    END             = 17
-};
-
-
 double linearToExponential(double linearValue, double minValue, double maxValue);
 double gainToDecibels(double gain);
 double decibelsToGain(double decibels);
 std::string floatToStringWithTwoDecimalPlaces(float value);
-std::string getParameterNameFromEnum(ParameterNames index);
-ParameterNames getParameterEnumFromParameterName(const std::string& name);
-
+ParameterQuery queryParameter(ParameterNames paramName, const std::string& parameterStringName = "");
 
 class APFont {
 public:

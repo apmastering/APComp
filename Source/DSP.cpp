@@ -1,6 +1,6 @@
-#include <algorithm>
-#include <utility>
-#include <cstring>
+//#include <algorithm>
+//#include <utility>
+//#include <cstring>
 
 #include "APCommon.h"
 #include "PluginProcessor.h"
@@ -41,7 +41,8 @@ void APComp::flushLoopVariables() {
 
 void APComp::doCompressionDSP(juce::dsp::AudioBlock<float>& mainBlock,
                               juce::dsp::AudioBlock<float>& sidechainBlock,
-                              size_t oversamplingFactor) {
+                              size_t oversamplingFactor,
+                              int sampleRate) {
     
     flushLoopVariables();
     
@@ -54,7 +55,6 @@ void APComp::doCompressionDSP(juce::dsp::AudioBlock<float>& mainBlock,
     const float ratioValue   = linearToExponential(getKnobValueFromCache(static_cast<int>(ParameterNames::ratio)),
                                                    Constants::ratioMin,
                                                    Constants::ratioMax);
-
     
     const float inputGainValue          = getKnobValueFromCache(static_cast<int>(ParameterNames::inGain));
     const float outGainValue            = getKnobValueFromCache(static_cast<int>(ParameterNames::outGain));
@@ -64,14 +64,16 @@ void APComp::doCompressionDSP(juce::dsp::AudioBlock<float>& mainBlock,
     const float feedbackValue           = getKnobValueFromCache(static_cast<int>(ParameterNames::feedback));
     const float inertiaCoefficientValue = getKnobValueFromCache(static_cast<int>(ParameterNames::inertia));
     const float ceiling                 = getKnobValueFromCache(static_cast<int>(ParameterNames::ceiling));
+#if PRO_VERSION
     const float foldback                = getKnobValueFromCache(static_cast<int>(ParameterNames::fold));
+#endif
           float inertiaDecayCoefficient = getKnobValueFromCache(static_cast<int>(ParameterNames::inertiaDecay));
           bool  sidechainSelected       = getBoolValueFromCache(static_cast<int>(ParameterNames::sidechain));
     
     if (ratioValue == 0) return;
 
-    const double attackCoefficient = std::exp(-1.0 / (oversampledSampleRate * attackValue));
-    const double releaseCoefficient = std::exp(-1.0 / (oversampledSampleRate * releaseValue));
+    const double attackCoefficient  = std::exp(-1.0 / (sampleRate * attackValue));
+    const double releaseCoefficient = std::exp(-1.0 / (sampleRate * releaseValue));
 
     float maxValuesForMeters[meterCount] = {0};
 

@@ -89,14 +89,14 @@ private:
     const float metersTop     = 23.0f;
     const float metersBottom  = 261.0f;
     
-    const int knobRow1 = 244;
-    const int knobRow2 = 327;
-    const int knobRow3 = 411;
+    const int knobRow1 = 242;
+    const int knobRow2 = 326;
+    const int knobRow3 = 409;
     
-    const int knobColumn1 = 74;
-    const int knobColumn2 = 221;
-    const int knobColumn3 = 370;
-    const int knobColumn4 = 519;
+    const int knobColumn1 = 71;
+    const int knobColumn2 = 218;
+    const int knobColumn3 = 368;
+    const int knobColumn4 = 518;
     
     const int presetRow1 = 0;
     const int presetRow2 = 0;
