@@ -50,7 +50,7 @@ public:
     juce::AudioProcessorValueTreeState apvts;
     juce::AudioProcessorValueTreeState::ParameterLayout createParameterLayout();
     
-    CircularBuffer cb;
+    CircularBuffer circularBuffer;
 
 private:
     

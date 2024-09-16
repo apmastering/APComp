@@ -234,7 +234,7 @@ std::string GUI::updateTextScreen() {
         debugRefreshCountDown--;
     } else {
         debugRefreshCountDown = 12;
-        cachedDebugValue = audioProcessor.cb.average();
+        cachedDebugValue = audioProcessor.circularBuffer.average();
     }
     std::stringstream stream;
     stream << std::fixed << std::setprecision(4) << cachedDebugValue << "ms";

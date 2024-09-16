@@ -1,7 +1,3 @@
-//#include <algorithm>
-//#include <utility>
-//#include <cstring>
-
 #include "APCommon.h"
 #include "PluginProcessor.h"
 #include "PluginEditor.h"

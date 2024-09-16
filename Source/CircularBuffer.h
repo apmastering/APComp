@@ -50,5 +50,5 @@ private:
     size_t head;
     size_t tail;
     bool isFull;
-    mutable std::mutex mutex; // Mutex for synchronizing access
+    mutable std::mutex mutex;
 };
