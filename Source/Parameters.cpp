@@ -54,7 +54,7 @@ juce::AudioProcessorValueTreeState::ParameterLayout APComp::createParameterLayou
     params.push_back(newFloatParam(ParameterNames::fold,         0.0f,      1.0f,       0.0f    ));
 
     params.push_back(newIntParam(ParameterNames::variMu,         0,         1,          0       ));
-    params.push_back(newIntParam(ParameterNames::sidechain,      0,         1,          1       ));
+    params.push_back(newIntParam(ParameterNames::sidechain,      0,         1,          0       ));
     params.push_back(newIntParam(ParameterNames::oversampling,   0,         1,          1       ));
 
     return { params.begin(), params.end() };

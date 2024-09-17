@@ -77,7 +77,7 @@ void APComp::startOversampler(double sampleRate, int samplesPerBlock) {
     
     oversampler.reset();
     
-    oversampler = std::make_unique<juce::dsp::Oversampling<float>>(2, 1, juce::dsp::Oversampling<float>::filterHalfBandFIREquiripple);
+    oversampler = std::make_unique<juce::dsp::Oversampling<float>>(2, 2, juce::dsp::Oversampling<float>::filterHalfBandFIREquiripple);
     
     oversampler->initProcessing(static_cast<size_t>(samplesPerBlock));
     oversampler->reset();

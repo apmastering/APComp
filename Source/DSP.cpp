@@ -82,7 +82,7 @@ void APComp::doCompressionDSP(juce::dsp::AudioBlock<float>& mainBlock,
     inertiaDecayCoefficient = 0.99 + (inertiaDecayCoefficient * 0.01);
     
     for (int sample = 0; sample < mainBlock.getNumSamples(); ++sample) {
-        
+
         float inputSample[4];
         double inputSampledb[2];
         inputSampledb[0] = -200.0f;

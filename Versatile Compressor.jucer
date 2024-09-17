@@ -7,37 +7,37 @@
               pluginManufacturerCode="APMG" pluginCode="VSTC">
   <MAINGROUP id="Hvoxjg" name="Versatile Compressor">
     <GROUP id="{75A4BD03-6758-0836-43A9-891F6FB902AD}" name="Source">
-      <FILE id="eTuHdj" name="knobPointer.png" compile="0" resource="1" file="Source/media/knobPointer.png"/>
-      <FILE id="n10CIn" name="knobArrow.png" compile="0" resource="1" file="Source/media/knobArrow.png"/>
-      <FILE id="pBUw1z" name="knob2.png" compile="0" resource="1" file="Source/media/knob2.png"/>
-      <FILE id="ugDYuY" name="KnobLooks.cpp" compile="1" resource="0" file="Source/KnobLooks.cpp"/>
-      <FILE id="ApiYs5" name="KnobLooks.h" compile="0" resource="0" file="Source/KnobLooks.h"/>
-      <FILE id="H0fnPA" name="JetBrainsMono-Light.otf" compile="0" resource="1"
-            file="Source/media/JetBrainsMono-Light.otf"/>
-      <FILE id="W9IYBr" name="bgPro.png" compile="0" resource="1" file="../APCompPro/bgPro.png"/>
-      <FILE id="ThYxzd" name="ProDSP.cpp" compile="1" resource="0" file="../APCompPro/ProDSP.cpp"/>
-      <FILE id="ET7pDD" name="ProDSP.h" compile="0" resource="0" file="../APCompPro/ProDSP.h"/>
-      <FILE id="P0GAdj" name="ProButtons.h" compile="0" resource="0" file="../APCompPro/ProButtons.h"/>
-      <FILE id="UtdelC" name="knob.png" compile="0" resource="1" file="Source/media/knob.png"/>
-      <FILE id="pBe1Dp" name="bg.png" compile="0" resource="1" file="Source/media/bg.png"/>
-      <FILE id="VbexeQ" name="Constants.h" compile="0" resource="0" file="Source/Constants.h"/>
-      <FILE id="u3HxHl" name="Parameters.cpp" compile="1" resource="0" file="Source/Parameters.cpp"/>
-      <FILE id="SPPuzh" name="DSP.cpp" compile="1" resource="0" file="Source/DSP.cpp"/>
-      <FILE id="fPIwz8" name="APCommon.h" compile="0" resource="0" file="Source/APCommon.h"/>
-      <FILE id="wgnZxb" name="Knockout-Flyweight.otf" compile="0" resource="1"
-            file="Source/media/Knockout-Flyweight.otf"/>
       <FILE id="oJKTnJ" name="APCommon.cpp" compile="1" resource="0" file="Source/APCommon.cpp"/>
-      <FILE id="GsBT7v" name="PluginProcessor.cpp" compile="1" resource="0"
-            file="Source/PluginProcessor.cpp"/>
-      <FILE id="SOTYYD" name="Configuration.cpp" compile="1" resource="0"
-            file="Source/Configuration.cpp"/>
+      <FILE id="fPIwz8" name="APCommon.h" compile="0" resource="0" file="Source/APCommon.h"/>
+      <FILE id="pBe1Dp" name="bg.png" compile="0" resource="1" file="Source/media/bg.png"/>
+      <FILE id="W9IYBr" name="bgPro.png" compile="0" resource="1" file="../APCompPro/bgPro.png"/>
       <FILE id="vXmoSF" name="CircularBuffer.h" compile="0" resource="0"
             file="Source/CircularBuffer.h"/>
-      <FILE id="z5AMgn" name="PluginProcessor.h" compile="0" resource="0"
-            file="Source/PluginProcessor.h"/>
+      <FILE id="SOTYYD" name="Configuration.cpp" compile="1" resource="0"
+            file="Source/Configuration.cpp"/>
+      <FILE id="VbexeQ" name="Constants.h" compile="0" resource="0" file="Source/Constants.h"/>
+      <FILE id="SPPuzh" name="DSP.cpp" compile="1" resource="0" file="Source/DSP.cpp"/>
+      <FILE id="H0fnPA" name="JetBrainsMono-Light.otf" compile="0" resource="1"
+            file="Source/media/JetBrainsMono-Light.otf"/>
+      <FILE id="UtdelC" name="knob.png" compile="0" resource="1" file="Source/media/knob.png"/>
+      <FILE id="pBUw1z" name="knob2.png" compile="0" resource="1" file="Source/media/knob2.png"/>
+      <FILE id="n10CIn" name="knobArrow.png" compile="0" resource="1" file="Source/media/knobArrow.png"/>
+      <FILE id="ugDYuY" name="KnobLooks.cpp" compile="1" resource="0" file="Source/KnobLooks.cpp"/>
+      <FILE id="ApiYs5" name="KnobLooks.h" compile="0" resource="0" file="Source/KnobLooks.h"/>
+      <FILE id="eTuHdj" name="knobPointer.png" compile="0" resource="1" file="Source/media/knobPointer.png"/>
+      <FILE id="wgnZxb" name="Knockout-Flyweight.otf" compile="0" resource="1"
+            file="Source/media/Knockout-Flyweight.otf"/>
+      <FILE id="u3HxHl" name="Parameters.cpp" compile="1" resource="0" file="Source/Parameters.cpp"/>
       <FILE id="gaH8NG" name="PluginEditor.cpp" compile="1" resource="0"
             file="Source/PluginEditor.cpp"/>
       <FILE id="K5AM2v" name="PluginEditor.h" compile="0" resource="0" file="Source/PluginEditor.h"/>
+      <FILE id="GsBT7v" name="PluginProcessor.cpp" compile="1" resource="0"
+            file="Source/PluginProcessor.cpp"/>
+      <FILE id="z5AMgn" name="PluginProcessor.h" compile="0" resource="0"
+            file="Source/PluginProcessor.h"/>
+      <FILE id="P0GAdj" name="ProButtons.h" compile="0" resource="0" file="../APCompPro/ProButtons.h"/>
+      <FILE id="ThYxzd" name="ProDSP.cpp" compile="1" resource="0" file="../APCompPro/ProDSP.cpp"/>
+      <FILE id="ET7pDD" name="ProDSP.h" compile="0" resource="0" file="../APCompPro/ProDSP.h"/>
     </GROUP>
   </MAINGROUP>
   <MODULES>
