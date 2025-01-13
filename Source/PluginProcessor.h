@@ -44,7 +44,7 @@ public:
     std::vector<std::atomic<float>> meterValuesAtomic;
     std::atomic<bool> oversamplerReady;
     
-    const size_t oversamplingFactor = 1;
+    const size_t oversamplingFactor = 2;
     int oversampledSampleRate;
 
     juce::AudioProcessorValueTreeState apvts;

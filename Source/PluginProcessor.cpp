@@ -77,14 +77,14 @@ void APComp::startOversampler(double sampleRate, int samplesPerBlock) {
     
     oversampler.reset();
     
-    oversampler = std::make_unique<juce::dsp::Oversampling<float>>(2, 2, juce::dsp::Oversampling<float>::filterHalfBandFIREquiripple);
+    oversampler = std::make_unique<juce::dsp::Oversampling<float>>(2, oversamplingFactor, juce::dsp::Oversampling<float>::filterHalfBandFIREquiripple);
     
     oversampler->initProcessing(static_cast<size_t>(samplesPerBlock));
     oversampler->reset();
     
     setLatencySamples(oversampler->getLatencyInSamples());
-        
-    oversampledSampleRate = static_cast<int>(sampleRate) * static_cast<int>(oversamplingFactor);
+    
+    oversampledSampleRate = static_cast<int>(sampleRate) * std::pow(2, static_cast<int>(oversamplingFactor));
  
     oversamplerReady.store(true);
 }
