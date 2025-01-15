@@ -10,7 +10,6 @@
       <FILE id="oJKTnJ" name="APCommon.cpp" compile="1" resource="0" file="Source/APCommon.cpp"/>
       <FILE id="fPIwz8" name="APCommon.h" compile="0" resource="0" file="Source/APCommon.h"/>
       <FILE id="pBe1Dp" name="bg.png" compile="0" resource="1" file="Source/media/bg.png"/>
-      <FILE id="W9IYBr" name="bgPro.png" compile="0" resource="1" file="../APCompPro/bgPro.png"/>
       <FILE id="vXmoSF" name="CircularBuffer.h" compile="0" resource="0"
             file="Source/CircularBuffer.h"/>
       <FILE id="SOTYYD" name="Configuration.cpp" compile="1" resource="0"
@@ -35,9 +34,6 @@
             file="Source/PluginProcessor.cpp"/>
       <FILE id="z5AMgn" name="PluginProcessor.h" compile="0" resource="0"
             file="Source/PluginProcessor.h"/>
-      <FILE id="P0GAdj" name="ProButtons.h" compile="0" resource="0" file="../APCompPro/ProButtons.h"/>
-      <FILE id="ThYxzd" name="ProDSP.cpp" compile="1" resource="0" file="../APCompPro/ProDSP.cpp"/>
-      <FILE id="ET7pDD" name="ProDSP.h" compile="0" resource="0" file="../APCompPro/ProDSP.h"/>
     </GROUP>
   </MAINGROUP>
   <MODULES>
@@ -63,9 +59,6 @@
         <CONFIGURATION isDebug="1" name="Debug" targetName="Versatile Compressor"/>
         <CONFIGURATION isDebug="0" name="Release" targetName="Versatile Compressor"
                        stripLocalSymbols="1"/>
-        <CONFIGURATION isDebug="1" name="Debug Pro" targetName="Versatile Compressor Pro"/>
-        <CONFIGURATION isDebug="0" name="Release Pro" targetName="Versatile Compressor Pro"
-                       stripLocalSymbols="1"/>
       </CONFIGURATIONS>
       <MODULEPATHS>
         <MODULEPATH id="juce_audio_basics" path="../../../../JUCE/modules"/>
@@ -85,7 +78,7 @@
     </XCODE_MAC>
     <LINUX_MAKE targetFolder="Builds/LinuxMakefile">
       <CONFIGURATIONS>
-        <CONFIGURATION isDebug="0" name="Release"/>
+        <CONFIGURATION isDebug="0" name="Release" linuxArchitecture="-m64"/>
       </CONFIGURATIONS>
       <MODULEPATHS>
         <MODULEPATH id="juce_audio_basics" path="~/JUCE/modules"/>
@@ -103,5 +96,25 @@
         <MODULEPATH id="juce_gui_extra" path="~/JUCE/modules"/>
       </MODULEPATHS>
     </LINUX_MAKE>
+    <VS2022 targetFolder="Builds/VisualStudio2022">
+      <CONFIGURATIONS>
+        <CONFIGURATION isDebug="0" name="Release" winArchitecture="x64"/>
+      </CONFIGURATIONS>
+      <MODULEPATHS>
+        <MODULEPATH id="juce_audio_basics" path="/Users/laney/Code/JUCE/modules"/>
+        <MODULEPATH id="juce_audio_devices" path="/Users/laney/Code/JUCE/modules"/>
+        <MODULEPATH id="juce_audio_formats" path="/Users/laney/Code/JUCE/modules"/>
+        <MODULEPATH id="juce_audio_plugin_client" path="/Users/laney/Code/JUCE/modules"/>
+        <MODULEPATH id="juce_audio_processors" path="/Users/laney/Code/JUCE/modules"/>
+        <MODULEPATH id="juce_audio_utils" path="/Users/laney/Code/JUCE/modules"/>
+        <MODULEPATH id="juce_core" path="/Users/laney/Code/JUCE/modules"/>
+        <MODULEPATH id="juce_data_structures" path="/Users/laney/Code/JUCE/modules"/>
+        <MODULEPATH id="juce_dsp" path="/Users/laney/Code/JUCE/modules"/>
+        <MODULEPATH id="juce_events" path="/Users/laney/Code/JUCE/modules"/>
+        <MODULEPATH id="juce_graphics" path="/Users/laney/Code/JUCE/modules"/>
+        <MODULEPATH id="juce_gui_basics" path="/Users/laney/Code/JUCE/modules"/>
+        <MODULEPATH id="juce_gui_extra" path="/Users/laney/Code/JUCE/modules"/>
+      </MODULEPATHS>
+    </VS2022>
   </EXPORTFORMATS>
 </JUCERPROJECT>
