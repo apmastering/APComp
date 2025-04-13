@@ -4,7 +4,6 @@
 #include <string>
 #include <JuceHeader.h>
 
-#define PRO_VERSION 0
 #define DEBUG_MODE 0
 
 
@@ -75,11 +74,7 @@ struct TextScreen {
     defaultTimeout(100),
     parameterName(""),
     suffix(""),
-#if PRO_VERSION
-    defaultText("Versatile Compressor Pro") {}
-#else
     defaultText("Versatile Compressor") {}
-#endif
 };
 
 

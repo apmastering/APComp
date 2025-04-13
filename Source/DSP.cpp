@@ -60,14 +60,12 @@ void APComp::doCompressionDSP(juce::dsp::AudioBlock<float>& mainBlock,
     const float feedbackValue           = getFloatKnobValue(ParameterNames::feedback);
     const float inertiaCoefficientValue = getFloatKnobValue(ParameterNames::inertia);
     const float ceiling                 = getFloatKnobValue(ParameterNames::ceiling);
-#if PRO_VERSION
-    const float foldback                = getFloatKnobValue(ParameterNames::fold);
-#endif
-          float inertiaDecayCoefficient = getFloatKnobValue(ParameterNames::inertiaDecay);
-          bool  sidechainSelected       = getBoolKnobValue(ParameterNames::sidechain);
+
+    float inertiaDecayCoefficient = getFloatKnobValue(ParameterNames::inertiaDecay);
+    bool  sidechainSelected       = getBoolKnobValue(ParameterNames::sidechain);
     
     if (ratioValue == 0) return;
-
+    
     const double attackCoefficient  = std::exp(-1.0 / (sampleRate * attackValue));
     const double releaseCoefficient = std::exp(-1.0 / (sampleRate * releaseValue));
 
@@ -165,13 +163,9 @@ void APComp::doCompressionDSP(juce::dsp::AudioBlock<float>& mainBlock,
             
             outputSample[channel] = decibelsToGain(inputSampledb[channel] - gainReduction[channel]) * (inputSample[channel] < 0 ? -1.0f : 1.0f);
             
-#if PRO_VERSION
-            doProOverdrive(outputSample[channel], ceiling, foldback);
-#else
             outputSample[channel] /= ceiling;
             outputSample[channel] = std::tanh(outputSample[channel]);
             outputSample[channel] *= ceiling;
-#endif
                   
             outputSample[channel] = outputSample[channel] * decibelsToGain(outGainValue);
 

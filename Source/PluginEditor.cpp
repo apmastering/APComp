@@ -6,21 +6,13 @@
 #include "PluginEditor.h"
 #include "Constants.h"
 
-#if PRO_VERSION
-    #include "ProButtons.h"
-#endif
-
 
 GUI::GUI (APComp& p)
 : AudioProcessorEditor (&p),
 audioProcessor (p),
 knobLook1(),
 knobLook2(),
-#if PRO_VERSION
-backgroundImage (juce::ImageFileFormat::loadFrom(BinaryData::bgPro_png, BinaryData::bgPro_pngSize)),
-#else
 backgroundImage (juce::ImageFileFormat::loadFrom(BinaryData::bg_png, BinaryData::bg_pngSize)),
-#endif
 customTypeface (APFont::getMonoFont()),
 inGainSlider(),
 outGainSlider(),
@@ -86,11 +78,7 @@ debugRefreshCountDown(0) {
     inertiaDecaySlider.setLookAndFeel(&knobLook1);
     ceilingSlider.setLookAndFeel(&knobLook1);
 
-#if PRO_VERSION
-    setSize (680, 640);
-#else
     setSize (680, 450);
-#endif
     
     const int refreshRate = 33;
     startTimer(refreshRate);
@@ -392,9 +380,7 @@ void GUI::mouseDown (const juce::MouseEvent& event) {
         case ButtonName::oversamplingOFF:   { switchOversampling(false);  return; }
         case ButtonName::sidechainInternal: { switchSidechain(false);     return; }
         case ButtonName::sidechainExternal: { switchSidechain(true);      return; }
-#if PRO_VERSION
-        case ButtonName::variMu:            { toggleVariMu();             return; }
-#endif
+
         default: return;
     }
 }
