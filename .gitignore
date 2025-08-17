@@ -8,3 +8,7 @@ Source/media/.DS_Store
 /Builds/MacOSX
 /Builds
 Versatile Compressor Pro.jucer
+.idea/APComp.iml
+.idea/editor.xml
+.idea/modules.xml
+.idea/vcs.xml

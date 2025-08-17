@@ -16,8 +16,22 @@ const juce::String APComp::getProgramName (int index) { return {}; }
 void APComp::changeProgramName (int index, const juce::String& newName) {}
 bool APComp::hasEditor() const { return true; }
 void APComp::releaseResources() {}
-bool APComp::isBusesLayoutSupported (const BusesLayout& layouts) const { return true; }
+bool APComp::isBusesLayoutSupported (const BusesLayout& layouts) const {
+    const auto& mainInput  = layouts.getMainInputChannelSet();
+    const auto& mainOutput = layouts.getMainOutputChannelSet();
 
+    if (mainInput == juce::AudioChannelSet::mono() &&
+        mainOutput == juce::AudioChannelSet::mono()) {
+        return true;
+        }
+
+    if (mainInput == juce::AudioChannelSet::stereo() &&
+        mainOutput == juce::AudioChannelSet::stereo()) {
+        return true;
+        }
+
+    return false;
+}
 juce::AudioProcessorEditor* APComp::createEditor() { return new GUI (*this); }
 
 void APComp::getStateInformation (juce::MemoryBlock& destData) {
