@@ -60,9 +60,7 @@ private:
                           juce::dsp::AudioBlock<float>& sidechainBlock,
                           size_t oversamplingFactor,
                           int sampleRate);
-    void startClock();
-    void stopClock();
-    
+
     float meterValues[meterCount];
     double outputSample[2];
     double previousGainReduction[2];
@@ -75,9 +73,7 @@ private:
     double slewedSignal[2];
     std::atomic<int> baseSampleRate;
     std::atomic<bool> flushDSP;
-    
-    std::chrono::time_point<std::chrono::high_resolution_clock> startTime;
-    
+
     std::vector<juce::AudioParameterFloat*> parameterList;
         
     std::unique_ptr<juce::dsp::Oversampling<float>> oversampler;
