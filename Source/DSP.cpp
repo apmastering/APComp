@@ -130,7 +130,7 @@ void APComp::doCompressionDSP(juce::dsp::AudioBlock<float>& mainBlock,
             if (inputSampledb[channel] < -200) inputSampledb[channel] = -200;
 
             if (inputSampledb[channel] > 4) {
-                inputSampledb[channel] = 4.0;  // hardcoded 4db feedback path clip. Improve later
+                inputSampledb[channel] = 4.0;
                 feedbackClip.store(true, std::memory_order_relaxed);
             } else {
                 feedbackClip.store(false, std::memory_order_relaxed);
@@ -193,13 +193,6 @@ void APComp::doCompressionDSP(juce::dsp::AudioBlock<float>& mainBlock,
             if (std::abs(inputSample[channel]) > maxValuesForMeters[channel]) maxValuesForMeters[channel] = std::abs(inputSample[channel]);
             if (std::abs(outputSample[channel]) > maxValuesForMeters[channel+2]) maxValuesForMeters[channel+2] = std::abs(outputSample[channel]);
             if (gainReduction[channel] > maxValuesForMeters[channel+4]) maxValuesForMeters[channel+4] = gainReduction[channel];
-        }
-
-        if (mainChannels == 1 && channelData[1] != nullptr) {
-            channelData[1][sample] = channelData[0][sample];
-            maxValuesForMeters[1] = maxValuesForMeters[0];
-            maxValuesForMeters[3] = maxValuesForMeters[2];
-            maxValuesForMeters[5] = maxValuesForMeters[4];
         }
     }
 
