@@ -17,19 +17,34 @@ void APComp::changeProgramName (int index, const juce::String& newName) {}
 bool APComp::hasEditor() const { return true; }
 void APComp::releaseResources() {}
 bool APComp::isBusesLayoutSupported (const BusesLayout& layouts) const {
-    const auto& mainInput  = layouts.getMainInputChannelSet();
+    const auto& mainInput = layouts.getMainInputChannelSet();
     const auto& mainOutput = layouts.getMainOutputChannelSet();
-
-    if (mainInput == juce::AudioChannelSet::mono() &&
-        mainOutput == juce::AudioChannelSet::mono()) {
-        return true;
-        }
-
+    const auto& sidechainInput = layouts.inputBuses.size() > 1 ? layouts.getChannelSet(true, 1) : juce::AudioChannelSet::disabled();
     if (mainInput == juce::AudioChannelSet::stereo() &&
+        sidechainInput == juce::AudioChannelSet::stereo() &&
         mainOutput == juce::AudioChannelSet::stereo()) {
         return true;
-        }
-
+    }
+    if (mainInput == juce::AudioChannelSet::stereo() &&
+        sidechainInput == juce::AudioChannelSet::mono() &&
+        mainOutput == juce::AudioChannelSet::stereo()) {
+        return true;
+    }
+    if (mainInput == juce::AudioChannelSet::stereo() &&
+        sidechainInput == juce::AudioChannelSet::disabled() &&
+        mainOutput == juce::AudioChannelSet::stereo()) {
+        return true;
+    }
+    if (mainInput == juce::AudioChannelSet::mono() &&
+        sidechainInput == juce::AudioChannelSet::mono() &&
+        mainOutput == juce::AudioChannelSet::mono()) {
+        return true;
+    }
+    if (mainInput == juce::AudioChannelSet::mono() &&
+        sidechainInput == juce::AudioChannelSet::disabled() &&
+        mainOutput == juce::AudioChannelSet::mono()) {
+        return true;
+    }
     return false;
 }
 juce::AudioProcessorEditor* APComp::createEditor() { return new GUI (*this); }

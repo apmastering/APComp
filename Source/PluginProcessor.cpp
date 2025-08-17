@@ -6,7 +6,8 @@
 
 APComp::APComp()
 : AudioProcessor(BusesProperties()
-                 .withInput("Input", juce::AudioChannelSet::quadraphonic(), true)
+                 .withInput("Input", juce::AudioChannelSet::stereo(), true)
+                 .withInput("Sidechain", juce::AudioChannelSet::stereo(), false)
                  .withOutput("Output", juce::AudioChannelSet::stereo(), true)),
 feedbackClip(false),
 meterValuesAtomic(meterCount),
@@ -28,105 +29,66 @@ flushDSP(false),
 parameterList(static_cast<int>(ParameterNames::END) + 1) {
         
     for (int i = 0; i < static_cast<int>(ParameterNames::END); ++i) {
-        
         parameterList[i] = static_cast<juce::AudioParameterFloat*>(apvts.getParameter(queryParameter(static_cast<ParameterNames>(i)).id));
     }
 }
 
 
 void APComp::prepareToPlay(double sampleRate, int samplesPerBlock) {
-    
     baseSampleRate.store(static_cast<int>(sampleRate), std::memory_order_relaxed);
-
     oversamplerReady.store(false);
-    
     startOversampler(sampleRate, samplesPerBlock);
-
     flushDSP.store(true, std::memory_order_relaxed);
 }
 
 
 bool APComp::getBoolKnobValue (ParameterNames parameter) const {
-    
     return parameterList[static_cast<int>(parameter)]->get() > 0.5f ? true : false;
 }
 
 
 float APComp::getFloatKnobValue(ParameterNames parameter) const {
-    
     return parameterList[static_cast<int>(parameter)]->get();
 }
 
 
 void APComp::startOversampler(double sampleRate, int samplesPerBlock) {
-    
     oversampler.reset();
-    
     oversampler = std::make_unique<juce::dsp::Oversampling<float>>(2, oversamplingFactor, juce::dsp::Oversampling<float>::filterHalfBandFIREquiripple);
-    
     oversampler->initProcessing(static_cast<size_t>(samplesPerBlock));
     oversampler->reset();
-    
     setLatencySamples(oversampler->getLatencyInSamples());
-    
     oversampledSampleRate = static_cast<int>(sampleRate) * std::pow(2, static_cast<int>(oversamplingFactor));
- 
     oversamplerReady.store(true);
 }
 
 
 void APComp::processBlock (juce::AudioBuffer<float>& buffer, juce::MidiBuffer& midiMessages) {
-    
     juce::ScopedNoDenormals noDenormals;
-    
     int sr = baseSampleRate.load(std::memory_order_relaxed);
     if (sr < 100) return;
-    
-    totalNumInputChannels = getTotalNumInputChannels();
-    totalNumOutputChannels = getTotalNumOutputChannels();
-    
-    for (auto i = totalNumInputChannels; i < totalNumOutputChannels; ++i) buffer.clear(i, 0, buffer.getNumSamples());
-
+    auto mainInputBuffer = getBusBuffer(buffer, true, 0);
+    auto sidechainInputBuffer = getBusBuffer(buffer, true, 1);
+    auto outputBuffer = getBusBuffer(buffer, false, 0);
+    for (auto i = getTotalNumInputChannels(); i < getTotalNumOutputChannels(); ++i)
+        buffer.clear(i, 0, buffer.getNumSamples());
     int overSamplingSelection = static_cast<int>(getFloatKnobValue(ParameterNames::oversampling));
-
-    juce::dsp::AudioBlock<float> originalBlock(buffer);
-    juce::dsp::AudioBlock<float> mainBlock;
+    juce::dsp::AudioBlock<float> mainBlock(mainInputBuffer);
     juce::dsp::AudioBlock<float> sidechainBlock;
-    
-    switch (totalNumInputChannels) {
 
-        case 1:
-            mainBlock       = originalBlock.getSingleChannelBlock(0);
-            sidechainBlock  = originalBlock.getSingleChannelBlock(0);
-            break;
-        case 2: 
-            mainBlock       = originalBlock.getSubsetChannelBlock(0, 2);
-            sidechainBlock  = originalBlock.getSubsetChannelBlock(0, 2);
-            break;
-        case 3:
-            mainBlock       = originalBlock.getSubsetChannelBlock(0, 2);
-            sidechainBlock  = originalBlock.getSingleChannelBlock(2);
-            break;
-        case 4:
-            mainBlock       = originalBlock.getSubsetChannelBlock(0, 2);
-            sidechainBlock  = originalBlock.getSubsetChannelBlock(2, 2);
-            break;
-        default:
-            return;
+    if (sidechainInputBuffer.getNumChannels() > 0 && sidechainInputBuffer.getNumSamples() > 0) {
+        sidechainBlock = juce::dsp::AudioBlock<float>(sidechainInputBuffer);
+    } else {
+        sidechainBlock = mainBlock;
     }
-    
-    if (overSamplingSelection == 0) {
-        
-        doCompressionDSP(mainBlock, sidechainBlock, 0, sr);
 
+    if (overSamplingSelection == 0) {
+        doCompressionDSP(mainBlock, sidechainBlock, 0, sr);
         return;
     }
 
     if (!oversamplerReady.load()) return;
-        
-    juce::dsp::AudioBlock<float> oversampledBlock = oversampler->processSamplesUp (mainBlock);
-    
+    juce::dsp::AudioBlock<float> oversampledBlock = oversampler->processSamplesUp(mainBlock);
     doCompressionDSP(oversampledBlock, sidechainBlock, oversamplingFactor, oversampledSampleRate);
-    
-    oversampler->processSamplesDown (mainBlock);
+    oversampler->processSamplesDown(mainBlock);
 }
